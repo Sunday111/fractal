@@ -10,7 +10,7 @@ set(CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code)
 file(GLOB_RECURSE target_headers ${CODE_DIR}/*.hpp)
 file(GLOB_RECURSE target_sources ${CODE_DIR}/*.cpp)
 
-set(target_name ass)
+set(target_name fractals)
 add_executable(${target_name} ${target_sources} ${target_headers})
 target_include_directories(${target_name} PUBLIC ${CODE_DIR})
 

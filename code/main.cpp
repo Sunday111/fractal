@@ -81,8 +81,8 @@ struct WorkerData
 {
     std::atomic_bool in_progress = false;
     std::atomic_bool must_stop = false;
-    int begin_pixel_y;
-    int end_pixel_y;
+    size_t begin_pixel_y;
+    size_t end_pixel_y;
 };
 
 int main()
@@ -134,10 +134,10 @@ int main()
                     const double y_range = (max_y - min_y) * scale;
                     const double sx = camera_x - x_range / 2;
                     const double sy = camera_y - y_range / 2;
-                    for (int x = 0; x != screen_width; ++x)
+                    for (auto x = 0; x != screen_width; ++x)
                     {
                         const double px = sx + x_range * static_cast<double>(x) / screen_width;
-                        for (int y = worker_data.begin_pixel_y; y != worker_data.end_pixel_y; ++y)
+                        for (auto y = worker_data.begin_pixel_y; y != worker_data.end_pixel_y; ++y)
                         {
                             const double py = sy + y_range * static_cast<double>(y) / screen_height;
                             const size_t iterations = DoMandelbrotLoop(px, py, max_iterations);
@@ -153,8 +153,8 @@ int main()
 
     while (!WindowShouldClose())
     {
-        if (IsKeyDown(KEY_E)) scale = std::clamp(scale * scale_factor, 0.001, 1.0);
-        if (IsKeyDown(KEY_Q)) scale = std::clamp(scale / scale_factor, 0.001, 1.0);
+        if (IsKeyDown(KEY_E)) scale = std::clamp(scale * scale_factor, 0.000, 1.0);
+        if (IsKeyDown(KEY_Q)) scale = std::clamp(scale / scale_factor, 0.000, 1.0);
         const double x_range = (max_x - min_x) * scale;
         const double y_range = (max_y - min_y) * scale;
         if (IsKeyDown(KEY_W)) camera_y -= y_range * 0.1f;
