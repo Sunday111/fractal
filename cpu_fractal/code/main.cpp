@@ -1,79 +1,16 @@
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <map>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "primes.hpp"
+#include "lib_fractal/lib_fractal.hpp"
+#include "lib_fractal/pallete.hpp"
 #include "raylib.h"
-
-template <size_t colors_count>
-constexpr auto MakePallete()
-{
-    std::array<Color, colors_count> result{};
-    for (Color& c : result)
-    {
-        c.a = 255;
-        c.r = 255;
-        c.g = 255;
-        c.b = 255;
-    }
-
-    auto compute_color = [](double k)
-    {
-        const auto kk = static_cast<uint8_t>(255.f * k);
-
-        Color c;
-        c.a = 255;
-        c.r = 255;
-        c.g = 255 - kk;
-        c.b = 255 - kk;
-        return c;
-    };
-
-    result.front() = WHITE;
-    result.back() = BLACK;
-
-    constexpr size_t gradient_start = 4;
-    constexpr size_t gradient_end = 100;
-
-    for (size_t iteration = 1; iteration != colors_count - 1; ++iteration)
-    {
-        double k = 0.0f;
-        if (iteration >= gradient_start)
-        {
-            if (iteration >= gradient_end)
-            {
-                k = 1.0f;
-            }
-            else
-            {
-                k = static_cast<double>(iteration - gradient_start) / (gradient_end - gradient_start);
-            }
-        }
-        result[iteration] = compute_color(k);
-    }
-
-    return result;
-}
-
-constexpr size_t DoMandelbrotLoop(double x0, double y0, size_t max_iterations)
-{
-    double x = 0.0f;
-    double y = 0.0f;
-    size_t iteration = 0;
-    while (x * x + y * y <= 4.0f && iteration != max_iterations)
-    {
-        double x_temp = x * x - y * y + x0;
-        y = 2 * x * y + y0;
-        x = x_temp;
-        ++iteration;
-    }
-
-    return iteration;
-}
 
 static constexpr std::string_view kFragmentShader = "";
 
@@ -84,6 +21,11 @@ struct WorkerData
     size_t begin_pixel_y;
     size_t end_pixel_y;
 };
+
+constexpr Color ToRayColor(lib_fractal::Color color)
+{
+    return Color{color.r, color.g, color.b, 255};
+}
 
 int main()
 {
@@ -100,7 +42,8 @@ int main()
     double camera_x = min_x + (max_x - min_x) / 2;
     double camera_y = min_y + (max_y - min_y) / 2;
     constexpr size_t max_iterations = 1000;
-    constexpr auto pallete = MakePallete<max_iterations + 1>();
+
+    constexpr auto pallete = lib_fractal::pallete::MakePallete<max_iterations + 1>();
 
     Image image = GenImageColor(screen_width, screen_height, BLANK);
     Texture2D texture = LoadTextureFromImage(image);
@@ -140,8 +83,8 @@ int main()
                         for (auto y = worker_data.begin_pixel_y; y != worker_data.end_pixel_y; ++y)
                         {
                             const double py = sy + y_range * static_cast<double>(y) / screen_height;
-                            const size_t iterations = DoMandelbrotLoop(px, py, max_iterations);
-                            const Color color = pallete[iterations];
+                            const size_t iterations = lib_fractal::MandelbrotLoop(px, py, max_iterations);
+                            const Color color = ToRayColor(pallete[iterations]);
                             pixels[y * screen_width + x] = color;
                         }
                     }
