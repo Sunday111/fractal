@@ -1,6 +1,8 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
+#include <string>
 
 class Window;
 
@@ -23,6 +25,8 @@ public:
     virtual void InitializeReflectionTypes();
 
     Window& GetWindow();
+
+    const std::filesystem::path& GetExecutableDir() const;
 
 private:
     std::unique_ptr<State> state_;

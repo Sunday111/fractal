@@ -19,8 +19,6 @@
 #include "wrap/wrap_glfw.hpp"
 #include "wrap/wrap_imgui.hpp"
 
-static std::filesystem::path exe_file{};
-
 constexpr double min_x = -2.0;
 constexpr double max_x = 0.47;
 constexpr double min_y = -1.12;
@@ -53,9 +51,9 @@ void FractalApp::Initialize()
 {
     Super::Initialize();
 
-    const auto content_dir = exe_file.parent_path() / "content";
+    const auto content_dir = GetExecutableDir() / "content";
     const auto shaders_dir = content_dir / "shaders";
-    Shader::shaders_dir_ = content_dir / "shaders";
+    Shader::shaders_dir_ = shaders_dir;
 
     camera = {min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2};
     color_seed = {0.3f, 0.3f, 0.3f};

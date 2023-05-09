@@ -4,10 +4,12 @@
 
 #include "opengl/debug/annotations.hpp"
 #include "opengl/debug/gl_debug_messenger.hpp"
+#include "os/os.hpp"
 #include "reflection/register_types.hpp"
 #include "window.hpp"
 #include "wrap/wrap_glfw.hpp"
 #include "wrap/wrap_imgui.hpp"
+
 
 namespace klgl
 {
@@ -16,6 +18,7 @@ struct Application::State
 {
     GlfwState glfw_;
     std::unique_ptr<Window> window_;
+    std::filesystem::path executable_dir_;
 };
 
 Application::Application()
@@ -44,6 +47,8 @@ void InitializeGLAD()
 
 void Application::Initialize()
 {
+    state_->executable_dir_ = os::GetExecutableDir();
+
     InitializeReflectionTypes();
 
     state_->glfw_.Initialize();
@@ -155,6 +160,11 @@ void Application::InitializeReflectionTypes()
 Window& Application::GetWindow()
 {
     return *state_->window_;
+}
+
+const std::filesystem::path& Application::GetExecutableDir() const
+{
+    return state_->executable_dir_;
 }
 
 }  // namespace klgl
