@@ -11,6 +11,7 @@
 #include "fmt/format.h"
 #include "opengl/debug/annotations.hpp"
 #include "opengl/debug/gl_debug_messenger.hpp"
+#include "opengl/gl_api.hpp"
 #include "reflection/register_types.hpp"
 #include "shader/shader.hpp"
 #include "window.hpp"
@@ -43,10 +44,10 @@ int main([[maybe_unused]] int argc, char** argv)
     const auto shaders_dir = content_dir / "shaders";
     Shader::shaders_dir_ = content_dir / "shaders";
 
-    const double min_x = -2.0f;
-    const double max_x = 0.47f;
-    const double min_y = -1.12f;
-    const double max_y = 1.12f;
+    const double min_x = -2.0;
+    const double max_x = 0.47;
+    const double min_y = -1.12;
+    const double max_y = 1.12;
     Eigen::Vector2d camera{min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2};
     Eigen::Vector3f color_seed{0.3f, 0.3f, 0.3f};
 
@@ -65,7 +66,7 @@ int main([[maybe_unused]] int argc, char** argv)
         ui32 window_height = 800;
         if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
         {
-            float x_scale, y_scale;
+            float x_scale = 0.f, y_scale = 0.f;
             glfwGetMonitorContentScale(monitor, &x_scale, &y_scale);
             window_width = static_cast<ui32>(static_cast<float>(window_width) * x_scale);
             window_height = static_cast<ui32>(static_cast<float>(window_height) * y_scale);
@@ -116,7 +117,7 @@ int main([[maybe_unused]] int argc, char** argv)
     OpenGl::BindVertexArray(vao);
     OpenGl::BindBuffer(GL_ARRAY_BUFFER, vbo);
     OpenGl::BufferData(GL_ARRAY_BUFFER, std::span{vertices}, GL_STATIC_DRAW);
-    OpenGl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), 0);
+    OpenGl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
     OpenGl::EnableVertexAttribArray(0);
 
     auto pos_loc = shader->GetUniform("uCameraPos");
@@ -124,7 +125,7 @@ int main([[maybe_unused]] int argc, char** argv)
     auto color_seed_loc = shader->GetUniform("uColorSeed");
     auto viewport_size_loc = shader->GetUniform("uViewportSize");
 
-    constexpr double scale_factor = 0.95f;
+    constexpr double scale_factor = 0.95;
     int scale_i = 0;
 
     auto prev_frame_time = std::chrono::high_resolution_clock::now();
@@ -134,6 +135,8 @@ int main([[maybe_unused]] int argc, char** argv)
         const auto current_frame_time = std::chrono::high_resolution_clock::now();
         // const auto frame_delta_time =
         //     std::chrono::duration<float, std::chrono::seconds::period>(current_frame_time - prev_frame_time).count();
+
+        OpenGl::Viewport(0, 0, static_cast<GLint>(window->GetWidth()), static_cast<GLint>(window->GetHeight()));
 
         OpenGl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -165,10 +168,10 @@ int main([[maybe_unused]] int argc, char** argv)
         const double scale = std::pow(scale_factor, scale_i);
         const double x_range = (max_x - min_x) * scale;
         const double y_range = (max_y - min_y) * scale;
-        if (is_key_down(GLFW_KEY_W)) camera.y() += y_range * 0.01f;
-        if (is_key_down(GLFW_KEY_S)) camera.y() -= y_range * 0.01f;
-        if (is_key_down(GLFW_KEY_A)) camera.x() -= x_range * 0.01f;
-        if (is_key_down(GLFW_KEY_D)) camera.x() += x_range * 0.01f;
+        if (is_key_down(GLFW_KEY_W)) camera.y() += y_range * 0.01;
+        if (is_key_down(GLFW_KEY_S)) camera.y() -= y_range * 0.01;
+        if (is_key_down(GLFW_KEY_A)) camera.x() -= x_range * 0.01;
+        if (is_key_down(GLFW_KEY_D)) camera.x() += x_range * 0.01;
 
         Eigen::Vector2f camera_f = camera.cast<float>();
         shader->SetUniform(pos_loc, camera_f);

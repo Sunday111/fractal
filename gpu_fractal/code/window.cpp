@@ -124,8 +124,6 @@ void Window::OnResize(int width, int height)
 
 void Window::OnMouseMove(Eigen::Vector2f new_cursor)
 {
-    float sensitivity = 0.001f;
-    auto delta = (new_cursor - cursor_) * sensitivity;
     cursor_ = new_cursor;
 }
 

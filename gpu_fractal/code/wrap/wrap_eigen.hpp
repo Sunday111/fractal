@@ -1,6 +1,8 @@
 #pragma once
 
+#include "EverydayTools/Math/constants.hpp"
 #include "macro/warning_suppress.hpp"
+
 
 // clang-format off
 #ifdef __clang__

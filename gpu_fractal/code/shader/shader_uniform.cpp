@@ -27,14 +27,13 @@ struct ValueTypeHelper
 template <>
 struct ValueTypeHelper<SamplerUniform>
 {
-    static bool Exec(edt::GUID type_guid, [[maybe_unused]] ui32 location, std::span<const ui8> value)
+    static bool Exec(edt::GUID type_guid, [[maybe_unused]] ui32 location, [[maybe_unused]] std::span<const ui8> value)
     {
         if (cppreflection::GetStaticTypeInfo<SamplerUniform>().guid == type_guid)
         {
-            auto& v = *reinterpret_cast<const SamplerUniform*>(value.data());
             assert(false);
+            // auto& v = *reinterpret_cast<const SamplerUniform*>(value.data());
             // const auto texture_handle = v.texture->GetHandle();
-
             // static_assert(GL_TEXTURE31 - GL_TEXTURE0 == 31);
             // glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + v.sampler_index));
             // glBindTexture(GL_TEXTURE_2D, texture_handle);
