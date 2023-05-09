@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 include(generic_compile_options)
 include(FetchContent)
-include(use_raylib)
 
 set(CODE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code)
 file(GLOB_RECURSE target_headers ${CODE_DIR}/*.hpp)
