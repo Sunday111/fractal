@@ -39,6 +39,7 @@ private:
     Eigen::Vector3f color_seed;
     GLuint vao;
     GLuint vbo;
+    GLuint ebo;
     UniformHandle pos_loc;
     UniformHandle scale_loc;
     UniformHandle color_seed_loc;
@@ -63,19 +64,21 @@ void FractalApp::Initialize()
     shader->Use();
 
     const std::array<Eigen::Vector3f, 6> vertices{
-        Eigen::Vector3f{-1.f, -1.f, 0.0f},
-        Eigen::Vector3f{1.f, -1.f, 0.0f},
-        Eigen::Vector3f{-1.f, 1.f, 0.0f},
+        {Eigen::Vector3f{1.0f, 1.0f, 0.0f},
+         Eigen::Vector3f{1.0f, -1.0f, 0.0f},
+         Eigen::Vector3f{-1.0f, -1.0f, 0.0f},
+         Eigen::Vector3f{-1.0f, 1.0f, 0.0f}}};
 
-        Eigen::Vector3f{1.f, -1.f, 0.0f},
-        Eigen::Vector3f{-1.f, 1.f, 0.0f},
-        Eigen::Vector3f{1.f, 1.f, 0.0f}};
+    const std::array<Eigen::Vector3i, 2> indices{{{0, 1, 3}, {1, 2, 3}}};
 
     vao = OpenGl::GenVertexArray();
     vbo = OpenGl::GenBuffer();
+    ebo = OpenGl::GenBuffer();
     OpenGl::BindVertexArray(vao);
     OpenGl::BindBuffer(GL_ARRAY_BUFFER, vbo);
     OpenGl::BufferData(GL_ARRAY_BUFFER, std::span{vertices}, GL_STATIC_DRAW);
+    OpenGl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    OpenGl::BufferData(GL_ELEMENT_ARRAY_BUFFER, std::span{indices}, GL_STATIC_DRAW);
     OpenGl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
     OpenGl::EnableVertexAttribArray(0);
 
@@ -115,7 +118,7 @@ void FractalApp::Tick()
     shader->Use();
 
     OpenGl::BindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    OpenGl::DrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
     ImGui::Begin("Parameters");
     ImGui::SliderFloat3("Color Seed", color_seed.data(), 0.0f, 1.0f, "%.12f");
