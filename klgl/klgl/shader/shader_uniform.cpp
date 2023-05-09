@@ -9,6 +9,9 @@
 #include "klgl/reflection/eigen_reflect.hpp"
 #include "klgl/shader/sampler_uniform.hpp"
 
+namespace klgl
+{
+
 template <typename T>
 struct ValueTypeHelper
 {
@@ -162,3 +165,5 @@ void ShaderUniform::CheckNotEmpty() const
         throw std::logic_error("Trying to use empty uniform");
     }
 }
+
+}  // namespace klgl

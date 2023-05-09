@@ -4,6 +4,9 @@
 
 #include <fstream>
 
+namespace klgl
+{
+
 void ReadFile(const std::filesystem::path& path, std::vector<char>& buffer)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -23,3 +26,5 @@ void ReadFile(const std::filesystem::path& path, std::vector<char>& buffer)
         throw std::runtime_error(std::move(message));
     }
 }
+
+}  // namespace klgl

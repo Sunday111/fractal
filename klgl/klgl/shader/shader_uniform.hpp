@@ -7,6 +7,9 @@
 #include "EverydayTools/GUID.hpp"
 #include "klgl/name_cache/name.hpp"
 
+namespace klgl
+{
+
 class ShaderUniform
 {
 public:
@@ -62,3 +65,5 @@ private:
     edt::GUID type_guid_;
     mutable bool sent_ = false;
 };
+
+}  // namespace klgl

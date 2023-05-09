@@ -2,6 +2,9 @@
 
 #include "klgl/opengl/gl_api.hpp"
 
+namespace klgl
+{
+
 template <typename T>
 struct TypeToGlType;
 
@@ -18,3 +21,5 @@ struct TypeToGlType<Eigen::Matrix<T, N, 1>>
     static constexpr size_t Size = static_cast<size_t>(N);
     static constexpr GLenum Type = TypeToGlType<T>::Type;
 };
+
+}  // namespace klgl

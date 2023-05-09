@@ -9,6 +9,9 @@
 #include "klgl/name_cache/name.hpp"
 #include "nlohmann/json.hpp"
 
+namespace klgl
+{
+
 class ShaderDefine
 {
 public:
@@ -31,3 +34,5 @@ public:
     Name name;
     edt::GUID type_guid;
 };
+
+}  // namespace klgl

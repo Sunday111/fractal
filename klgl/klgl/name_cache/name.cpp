@@ -4,6 +4,9 @@
 
 #include "klgl/name_cache/name_cache.hpp"
 
+namespace klgl
+{
+
 Name::Name(const char* strptr) : Name(std::string_view(strptr)) {}
 
 Name::Name(const std::string& string) : Name(std::string_view(string)) {}
@@ -33,3 +36,5 @@ std::string_view Name::GetView() const
     }
     throw std::logic_error("Invalid string id");
 }
+
+}  // namespace klgl

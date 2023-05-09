@@ -2,6 +2,9 @@
 
 #include "klgl/opengl/gl_api.hpp"
 
+namespace klgl
+{
+
 class GlDebugMessenger
 {
 public:
@@ -16,3 +19,5 @@ public:
         const GLchar* message,
         const void* user_param);
 };
+
+}  // namespace klgl

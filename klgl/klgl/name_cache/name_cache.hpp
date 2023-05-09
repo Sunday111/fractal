@@ -8,7 +8,7 @@
 
 #include "klgl/name_cache/name.hpp"
 
-namespace name_cache_impl
+namespace klgl::name_cache_impl
 {
 using NameId = Name::NameId;
 class NameCache
@@ -24,4 +24,5 @@ private:
     std::unordered_map<std::string_view, NameId> view_to_id_;
     std::unordered_map<NameId, std::string> id_to_str_;
 };
-}  // namespace name_cache_impl
+
+}  // namespace klgl::name_cache_impl

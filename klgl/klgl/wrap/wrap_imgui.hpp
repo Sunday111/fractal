@@ -33,6 +33,9 @@ include_imgui_begin;
 #include <imgui.h>
 include_imgui_end;
 
+namespace klgl
+{
+
 template <typename T>
 static constexpr ImGuiDataType_ CastDataType() noexcept
 {
@@ -77,3 +80,5 @@ static constexpr ImGuiDataType_ CastDataType() noexcept
         return ImGuiDataType_Double;
     }
 }
+
+}  // namespace klgl

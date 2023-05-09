@@ -6,6 +6,9 @@
 #include "EverydayTools/GUID_fmtlib.hpp"
 #include "klgl/reflection/eigen_reflect.hpp"
 
+namespace klgl
+{
+
 ShaderDefine::ShaderDefine(ShaderDefine&& another)
 {
     MoveFrom(another);
@@ -112,3 +115,5 @@ ShaderDefine ShaderDefine::ReadFromJson(const nlohmann::json& json)
 
     return def;
 }
+
+}  // namespace klgl

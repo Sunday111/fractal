@@ -3,6 +3,9 @@
 #include "fmt/format.h"
 #include "klgl/macro/to_string.hpp"
 
+namespace klgl
+{
+
 void GlDebugMessenger::Start()
 {
     glEnable(GL_DEBUG_OUTPUT);
@@ -62,3 +65,5 @@ void GlDebugMessenger::DebugProc(
 {
     fmt::print("{} {} {}: {}\n", SourceToString(source), TypeToString(type), id, message);
 }
+
+}  // namespace klgl

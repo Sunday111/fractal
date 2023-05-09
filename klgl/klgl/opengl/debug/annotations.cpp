@@ -2,6 +2,9 @@
 
 #include "klgl/opengl/gl_api.hpp"
 
+namespace klgl
+{
+
 ScopeAnnotation::ScopeAnnotation([[maybe_unused]] std::string_view scope_name, [[maybe_unused]] size_t id) noexcept
 {
 #ifdef ENABLE_RENDERING_ANNOTATIONS
@@ -19,3 +22,5 @@ ScopeAnnotation::~ScopeAnnotation() noexcept
     glPopDebugGroupKHR();
 #endif
 }
+
+}  // namespace klgl

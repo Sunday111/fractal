@@ -6,6 +6,9 @@
 
 struct GLFWwindow;
 
+namespace klgl
+{
+
 class Window
 {
 public:
@@ -67,3 +70,5 @@ private:
     uint32_t height_;
     bool input_mode_ = false;
 };
+
+}  // namespace klgl

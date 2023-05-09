@@ -20,6 +20,9 @@
 #include "klgl/wrap/wrap_imgui.hpp"
 #include "nlohmann/json.hpp"
 
+namespace klgl
+{
+
 std::filesystem::path Shader::shaders_dir_;
 
 static void
@@ -591,3 +594,5 @@ void Shader::UpdateUniforms()
         }
     }
 }
+
+}  // namespace klgl

@@ -11,7 +11,6 @@
 #include "fmt/format.h"
 #include "klgl/application.hpp"
 #include "klgl/opengl/debug/annotations.hpp"
-#include "klgl/opengl/debug/gl_debug_messenger.hpp"
 #include "klgl/opengl/gl_api.hpp"
 #include "klgl/reflection/register_types.hpp"
 #include "klgl/shader/shader.hpp"
@@ -25,10 +24,12 @@ constexpr double min_y = -1.12;
 constexpr double max_y = 1.12;
 constexpr double scale_factor = 0.95;
 
-class FractalApp : public klgl::Application
+using namespace klgl;
+
+class FractalApp : public Application
 {
 public:
-    using Super = klgl::Application;
+    using Super = Application;
 
     virtual void Initialize() override;
     virtual void Tick() override;
@@ -126,6 +127,10 @@ void FractalApp::Tick()
         ImGui::InputInt("Zoom", &scale_i);
     }
 
+    if (ImGui::CollapsingHeader("Shader"))
+    {
+        shader->DrawDetails();
+    }
     ImGui::End();
 }
 

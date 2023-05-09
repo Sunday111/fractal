@@ -6,6 +6,9 @@
 #include "klgl/reflection/eigen_reflect.hpp"
 #include "klgl/shader/sampler_uniform.hpp"
 
+namespace klgl
+{
+
 inline void RegisterReflectionTypes()
 {
     [[maybe_unused]] const cppreflection::Type* t;
@@ -29,3 +32,5 @@ inline void RegisterReflectionTypes()
     t = cppreflection::GetTypeInfo<Eigen::Matrix4f>();
     t = cppreflection::GetTypeInfo<SamplerUniform>();
 }
+
+}  // namespace klgl

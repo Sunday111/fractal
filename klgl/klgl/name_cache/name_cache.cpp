@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace name_cache_impl
+namespace klgl::name_cache_impl
 {
 NameId NameCache::GetId(std::string_view view)
 {
@@ -37,4 +37,4 @@ NameCache& NameCache::Get()
     static NameCache name_cache;
     return name_cache;
 }
-}  // namespace name_cache_impl
+}  // namespace klgl::name_cache_impl

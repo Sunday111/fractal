@@ -4,6 +4,9 @@
 
 #include <stdexcept>
 
+namespace klgl
+{
+
 template <typename T>
 void GenObjects(T api_fn, const std::span<GLuint>& objects)
 {
@@ -256,3 +259,5 @@ void OpenGl::LineWidth(float width) noexcept
 {
     glLineWidth(width);
 }
+
+}  // namespace klgl

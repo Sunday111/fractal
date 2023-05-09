@@ -12,6 +12,9 @@
 #include "klgl/shader/define_handle.hpp"
 #include "klgl/shader/uniform_handle.hpp"
 
+namespace klgl
+{
+
 class ShaderDefine;
 class ShaderUniform;
 class Texture;
@@ -103,3 +106,5 @@ const T& Shader::GetDefineValue(DefineHandle& handle) const
     auto value_view = GetDefineValue(handle, type_guid);
     return *reinterpret_cast<const T*>(value_view.data());
 }
+
+}  // namespace klgl

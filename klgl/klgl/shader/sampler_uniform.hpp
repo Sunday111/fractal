@@ -4,6 +4,9 @@
 
 #include "CppReflection/GetStaticTypeInfo.hpp"
 
+namespace klgl
+{
+
 class Texture
 {
 };
@@ -15,14 +18,16 @@ public:
     std::shared_ptr<Texture> texture;
 };
 
+}  // namespace klgl
+
 namespace cppreflection
 {
 template <>
-struct TypeReflectionProvider<SamplerUniform>
+struct TypeReflectionProvider<::klgl::SamplerUniform>
 {
     [[nodiscard]] inline constexpr static auto ReflectType()
     {
-        return StaticClassTypeInfo<SamplerUniform>(
+        return StaticClassTypeInfo<::klgl::SamplerUniform>(
             "SamplerUniform",
             edt::GUID::Create("2FBEEB94-BBB3-491C-A299-AD1960641D3F"));
     }

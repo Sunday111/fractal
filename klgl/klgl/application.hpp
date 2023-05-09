@@ -4,10 +4,11 @@
 #include <memory>
 #include <string>
 
-class Window;
-
 namespace klgl
 {
+
+class Window;
+
 class Application
 {
     struct State;

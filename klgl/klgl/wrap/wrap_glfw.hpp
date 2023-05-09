@@ -5,6 +5,9 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+namespace klgl
+{
+
 class GlfwState
 {
 public:
@@ -35,3 +38,5 @@ public:
 private:
     bool initialized_ = false;
 };
+
+}  // namespace klgl

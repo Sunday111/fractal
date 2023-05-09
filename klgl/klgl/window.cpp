@@ -6,6 +6,9 @@
 
 #include "GLFW/glfw3.h"
 
+namespace klgl
+{
+
 Window::Window(uint32_t width, uint32_t height) : id_(MakeWindowId()), width_(width), height_(height)
 {
     Create();
@@ -147,3 +150,5 @@ void Window::OnMouseButton(int button, int action, [[maybe_unused]] int mods)
 }
 
 void Window::OnMouseScroll([[maybe_unused]] float dx, [[maybe_unused]] float dy) {}
+
+}  // namespace klgl

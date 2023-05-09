@@ -6,6 +6,9 @@
 #include "klgl/wrap/wrap_eigen.hpp"
 #include "klgl/wrap/wrap_imgui.hpp"
 
+namespace klgl
+{
+
 template <typename T>
 bool ScalarProperty(
     edt::GUID type_guid,
@@ -124,3 +127,5 @@ void TypeIdWidget(edt::GUID type_guid, void* base, bool& value_changed)
         value_changed |= member_changed;
     }
 }
+
+}  // namespace klgl

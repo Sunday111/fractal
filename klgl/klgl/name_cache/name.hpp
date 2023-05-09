@@ -3,6 +3,9 @@
 #include <limits>
 #include <string_view>
 
+namespace klgl
+{
+
 class Name
 {
 public:
@@ -33,3 +36,5 @@ private:
 private:
     NameId id_ = kInvalidNameId;
 };
+
+}  // namespace klgl
