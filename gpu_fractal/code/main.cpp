@@ -8,16 +8,16 @@
 #include <utility>
 #include <vector>
 
-#include "application.hpp"
 #include "fmt/format.h"
-#include "opengl/debug/annotations.hpp"
-#include "opengl/debug/gl_debug_messenger.hpp"
-#include "opengl/gl_api.hpp"
-#include "reflection/register_types.hpp"
-#include "shader/shader.hpp"
-#include "window.hpp"
-#include "wrap/wrap_glfw.hpp"
-#include "wrap/wrap_imgui.hpp"
+#include "klgl/application.hpp"
+#include "klgl/opengl/debug/annotations.hpp"
+#include "klgl/opengl/debug/gl_debug_messenger.hpp"
+#include "klgl/opengl/gl_api.hpp"
+#include "klgl/reflection/register_types.hpp"
+#include "klgl/shader/shader.hpp"
+#include "klgl/window.hpp"
+#include "klgl/wrap/wrap_glfw.hpp"
+#include "klgl/wrap/wrap_imgui.hpp"
 
 constexpr double min_x = -2.0;
 constexpr double max_x = 0.47;
