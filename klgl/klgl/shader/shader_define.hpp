@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "EverydayTools/GUID.hpp"
-#include "klgl/integer.hpp"
 #include "klgl/name_cache/name.hpp"
 #include "nlohmann/json.hpp"
 
@@ -20,7 +19,7 @@ public:
     ShaderDefine& operator=(ShaderDefine&& another);
 
     std::string GenDefine() const;
-    void SetValue(std::span<const ui8> value_view);
+    void SetValue(std::span<const uint8_t> value_view);
 
     static ShaderDefine ReadFromJson(const nlohmann::json& json);
 
@@ -28,7 +27,7 @@ protected:
     ShaderDefine() = default;
 
 public:
-    std::vector<ui8> value;
+    std::vector<uint8_t> value;
     Name name;
     edt::GUID type_guid;
 };

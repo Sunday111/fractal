@@ -59,14 +59,14 @@ void Application::Initialize()
 #endif
 
     {
-        ui32 window_width = 800;
-        ui32 window_height = 800;
+        uint32_t window_width = 800;
+        uint32_t window_height = 800;
         if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
         {
             float x_scale = 0.f, y_scale = 0.f;
             glfwGetMonitorContentScale(monitor, &x_scale, &y_scale);
-            window_width = static_cast<ui32>(static_cast<float>(window_width) * x_scale);
-            window_height = static_cast<ui32>(static_cast<float>(window_height) * y_scale);
+            window_width = static_cast<uint32_t>(static_cast<float>(window_width) * x_scale);
+            window_height = static_cast<uint32_t>(static_cast<float>(window_height) * y_scale);
         }
 
         state_->window_ = std::make_unique<Window>(window_width, window_height);

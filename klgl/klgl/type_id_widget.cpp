@@ -2,7 +2,6 @@
 
 #include "CppReflection/GetStaticTypeInfo.hpp"
 #include "CppReflection/TypeRegistry.hpp"
-#include "klgl/integer.hpp"
 #include "klgl/reflection/eigen_reflect.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
 #include "klgl/wrap/wrap_imgui.hpp"
@@ -100,14 +99,14 @@ void SimpleTypeWidget(edt::GUID type_guid, std::string_view name, void* value, b
     value_changed = false;
     [[maybe_unused]] const bool found_type = ScalarProperty<float>(type_guid, name, value, value_changed) ||
                                              ScalarProperty<double>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<ui8>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<ui16>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<ui32>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<ui64>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<i8>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<i16>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<i32>(type_guid, name, value, value_changed) ||
-                                             ScalarProperty<i64>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<uint8_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<uint16_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<uint32_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<uint64_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<int8_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<int16_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<int32_t>(type_guid, name, value, value_changed) ||
+                                             ScalarProperty<int64_t>(type_guid, name, value, value_changed) ||
                                              VectorProperty<Eigen::Vector2f>(type_guid, name, value, value_changed) ||
                                              VectorProperty<Eigen::Vector3f>(type_guid, name, value, value_changed) ||
                                              VectorProperty<Eigen::Vector4f>(type_guid, name, value, value_changed) ||

@@ -17,25 +17,24 @@
 
 #include "CppReflection/GetStaticTypeInfo.hpp"
 #include "fmt/format.h"
-#include "klgl/integer.hpp"
 #include "klgl/template/get_enum_underlying.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
 
-enum class GlPolygonMode : ui8
+enum class GlPolygonMode : uint8_t
 {
     Point,
     Line,
     Fill,
     Max
 };
-enum class GlTextureWrap : ui8
+enum class GlTextureWrap : uint8_t
 {
     S,
     T,
     R,
     Max
 };
-enum class GlTextureWrapMode : ui8
+enum class GlTextureWrapMode : uint8_t
 {
     ClampToEdge,
     ClampToBorder,
@@ -45,7 +44,7 @@ enum class GlTextureWrapMode : ui8
     Max
 };
 
-enum class GlTextureFilter : ui8
+enum class GlTextureFilter : uint8_t
 {
     Nearest,
     Linear,
@@ -118,17 +117,17 @@ public:
 
     [[nodiscard]] static constexpr GLint ConvertEnum(GlTextureFilter mode) noexcept;
 
-    static void SetUniform(ui32 location, const float& f) noexcept;
+    static void SetUniform(uint32_t location, const float& f) noexcept;
 
-    static void SetUniform(ui32 location, const Eigen::Matrix4f& m, bool transpose = false) noexcept;
+    static void SetUniform(uint32_t location, const Eigen::Matrix4f& m, bool transpose = false) noexcept;
 
-    static void SetUniform(ui32 location, const Eigen::Matrix3f& m, bool transpose = false) noexcept;
+    static void SetUniform(uint32_t location, const Eigen::Matrix3f& m, bool transpose = false) noexcept;
 
-    static void SetUniform(ui32 location, const Eigen::Vector4f& v) noexcept;
+    static void SetUniform(uint32_t location, const Eigen::Vector4f& v) noexcept;
 
-    static void SetUniform(ui32 location, const Eigen::Vector3f& v) noexcept;
+    static void SetUniform(uint32_t location, const Eigen::Vector3f& v) noexcept;
 
-    static void SetUniform(ui32 location, const Eigen::Vector2f& v) noexcept;
+    static void SetUniform(uint32_t location, const Eigen::Vector2f& v) noexcept;
 
     static void SetTextureParameter(GLenum target, GLenum pname, const GLfloat* value) noexcept;
 
@@ -166,9 +165,9 @@ public:
 
     static void GenerateMipmap2d() noexcept;
 
-    [[nodiscard]] static std::optional<ui32> FindUniformLocation(GLuint shader_program, const char* name) noexcept;
+    [[nodiscard]] static std::optional<uint32_t> FindUniformLocation(GLuint shader_program, const char* name) noexcept;
 
-    [[nodiscard]] static ui32 GetUniformLocation(GLuint shader_program, const char* name);
+    [[nodiscard]] static uint32_t GetUniformLocation(GLuint shader_program, const char* name);
 
     static void PolygonMode(GlPolygonMode mode) noexcept;
     static void PointSize(float size) noexcept;

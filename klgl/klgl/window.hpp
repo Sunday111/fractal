@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "klgl/integer.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
 
 struct GLFWwindow;
@@ -10,17 +9,17 @@ struct GLFWwindow;
 class Window
 {
 public:
-    Window(ui32 width = 800, ui32 height = 600);
+    Window(uint32_t width = 800, uint32_t height = 600);
     ~Window();
 
     void MakeContextCurrent();
 
     [[nodiscard]] bool ShouldClose() const noexcept;
-    [[nodiscard]] ui32 GetWidth() const noexcept
+    [[nodiscard]] uint32_t GetWidth() const noexcept
     {
         return width_;
     }
-    [[nodiscard]] ui32 GetHeight() const noexcept
+    [[nodiscard]] uint32_t GetHeight() const noexcept
     {
         return height_;
     }
@@ -36,7 +35,7 @@ public:
     void SwapBuffers() noexcept;
 
 private:
-    static ui32 MakeWindowId();
+    static uint32_t MakeWindowId();
     static Window* GetWindow(GLFWwindow* glfw_window) noexcept;
 
     template <auto method, typename... Args>
@@ -63,8 +62,8 @@ private:
 private:
     GLFWwindow* window_ = nullptr;
     Eigen::Vector2f cursor_;
-    ui32 id_;
-    ui32 width_;
-    ui32 height_;
+    uint32_t id_;
+    uint32_t width_;
+    uint32_t height_;
     bool input_mode_ = false;
 };

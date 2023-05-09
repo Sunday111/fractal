@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "CppReflection/GetStaticTypeInfo.hpp"
-#include "klgl/integer.hpp"
 
 class Texture
 {
@@ -12,7 +11,7 @@ class Texture
 class SamplerUniform
 {
 public:
-    ui8 sampler_index;
+    uint8_t sampler_index;
     std::shared_ptr<Texture> texture;
 };
 

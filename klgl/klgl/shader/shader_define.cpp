@@ -18,7 +18,7 @@ ShaderDefine& ShaderDefine::operator=(ShaderDefine&& another)
 }
 
 template <typename T>
-inline static const T& CastBuffer(const std::vector<ui8>& buffer) noexcept
+inline static const T& CastBuffer(const std::vector<uint8_t>& buffer) noexcept
 {
     assert(buffer.size() == sizeof(T));
     return *reinterpret_cast<const T*>(buffer.data());
@@ -51,7 +51,7 @@ void ShaderDefine::MoveFrom(ShaderDefine& another)
     value = std::move(another.value);
 }
 
-void ShaderDefine::SetValue(std::span<const ui8> value_view)
+void ShaderDefine::SetValue(std::span<const uint8_t> value_view)
 {
     auto type_registry = cppreflection::GetTypeRegistry();
     if (!type_registry->FindType(type_guid))
@@ -64,9 +64,9 @@ void ShaderDefine::SetValue(std::span<const ui8> value_view)
 }
 
 template <typename T>
-inline static std::span<const ui8> MakeValueSpan(const T& value) noexcept
+inline static std::span<const uint8_t> MakeValueSpan(const T& value) noexcept
 {
-    return std::span<const ui8>(reinterpret_cast<const ui8*>(&value), sizeof(T));
+    return std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(T));
 }
 
 ShaderDefine ShaderDefine::ReadFromJson(const nlohmann::json& json)

@@ -36,35 +36,35 @@ include_imgui_end;
 template <typename T>
 static constexpr ImGuiDataType_ CastDataType() noexcept
 {
-    if constexpr (std::is_same_v<T, i8>)
+    if constexpr (std::is_same_v<T, int8_t>)
     {
         return ImGuiDataType_S8;
     }
-    if constexpr (std::is_same_v<T, ui8>)
+    if constexpr (std::is_same_v<T, uint8_t>)
     {
         return ImGuiDataType_U8;
     }
-    if constexpr (std::is_same_v<T, i16>)
+    if constexpr (std::is_same_v<T, int16_t>)
     {
         return ImGuiDataType_S16;
     }
-    if constexpr (std::is_same_v<T, ui16>)
+    if constexpr (std::is_same_v<T, uint16_t>)
     {
         return ImGuiDataType_U16;
     }
-    if constexpr (std::is_same_v<T, i32>)
+    if constexpr (std::is_same_v<T, int32_t>)
     {
         return ImGuiDataType_S32;
     }
-    if constexpr (std::is_same_v<T, ui32>)
+    if constexpr (std::is_same_v<T, uint32_t>)
     {
         return ImGuiDataType_U32;
     }
-    if constexpr (std::is_same_v<T, i64>)
+    if constexpr (std::is_same_v<T, int64_t>)
     {
         return ImGuiDataType_S64;
     }
-    if constexpr (std::is_same_v<T, ui64>)
+    if constexpr (std::is_same_v<T, uint64_t>)
     {
         return ImGuiDataType_U64;
     }

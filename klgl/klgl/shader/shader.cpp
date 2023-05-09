@@ -140,13 +140,13 @@ void Shader::Use()
     OpenGl::UseProgram(*program_);
 }
 
-std::optional<ui32> Shader::FindUniformLocation(const char* name) const noexcept
+std::optional<uint32_t> Shader::FindUniformLocation(const char* name) const noexcept
 {
     Check();
     return OpenGl::FindUniformLocation(*program_, name);
 }
 
-ui32 Shader::GetUniformLocation(const char* name) const noexcept
+uint32_t Shader::GetUniformLocation(const char* name) const noexcept
 {
     Check();
     return OpenGl::GetUniformLocation(*program_, name);
@@ -246,7 +246,7 @@ void Shader::DrawDetails()
     }
 
     constexpr size_t stack_val_bytes = 64;
-    ui64 stack_val_arr[stack_val_bytes / 8];
+    uint64_t stack_val_arr[stack_val_bytes / 8];
 
     if (ImGui::TreeNode("Dynamic Variables"))
     {
@@ -259,7 +259,7 @@ void Shader::DrawDetails()
                 uniform.GetValue().data());
             assert(stack_val_bytes >= type_info->GetInstanceSize());
 
-            std::span<ui8> val_view(reinterpret_cast<ui8*>(stack_val_arr), type_info->GetInstanceSize());
+            std::span<uint8_t> val_view(reinterpret_cast<uint8_t*>(stack_val_arr), type_info->GetInstanceSize());
 
             bool value_changed = false;
             SimpleTypeWidget(uniform.GetTypeGUID(), uniform.GetName().GetView(), val_view.data(), value_changed);
@@ -280,7 +280,7 @@ void Shader::DrawDetails()
     }
 }
 
-std::span<const ui8> Shader::GetDefineValue(DefineHandle& handle, edt::GUID type_guid) const
+std::span<const uint8_t> Shader::GetDefineValue(DefineHandle& handle, edt::GUID type_guid) const
 {
     UpdateDefineHandle(handle);
 
@@ -298,7 +298,7 @@ std::span<const ui8> Shader::GetDefineValue(DefineHandle& handle, edt::GUID type
     return std::span(define.value.begin(), define.value.size());
 }
 
-void Shader::SetDefineValue(DefineHandle& handle, edt::GUID type_guid, std::span<const ui8> value)
+void Shader::SetDefineValue(DefineHandle& handle, edt::GUID type_guid, std::span<const uint8_t> value)
 {
     UpdateDefineHandle(handle);
     ShaderDefine& define = defines_[handle.index];
@@ -319,7 +319,7 @@ std::optional<DefineHandle> Shader::FindDefine(Name name) const noexcept
         {
             DefineHandle h;
             h.name = name;
-            h.index = static_cast<ui32>(index);
+            h.index = static_cast<uint32_t>(index);
             result = h;
             break;
         }
@@ -348,7 +348,7 @@ std::optional<UniformHandle> Shader::FindUniform(Name name) const noexcept
         {
             UniformHandle h;
             h.name = name;
-            h.index = static_cast<ui32>(index);
+            h.index = static_cast<uint32_t>(index);
             result = h;
             break;
         }
@@ -379,7 +379,7 @@ const ShaderUniform& Shader::GetUniform(UniformHandle& handle) const
     return uniforms_[handle.index];
 }
 
-std::span<const ui8> Shader::GetUniformValueViewRaw(UniformHandle& handle, edt::GUID type_guid) const
+std::span<const uint8_t> Shader::GetUniformValueViewRaw(UniformHandle& handle, edt::GUID type_guid) const
 {
     auto& uniform = GetUniform(handle);
     uniform.EnsureTypeMatch(type_guid);
@@ -402,7 +402,7 @@ void Shader::UpdateDefineHandle(DefineHandle& handle) const
     }
 }
 
-void Shader::SetUniform(UniformHandle& handle, edt::GUID type_guid, std::span<const ui8> value)
+void Shader::SetUniform(UniformHandle& handle, edt::GUID type_guid, std::span<const uint8_t> value)
 {
     auto& uniform = GetUniform(handle);
     uniform.EnsureTypeMatch(type_guid);
@@ -414,7 +414,7 @@ void Shader::SetUniform(UniformHandle& handle, const std::shared_ptr<Texture>& t
     auto sampler_uniform = GetUniformValue<SamplerUniform>(handle);
     ShaderUniform& u = uniforms_[handle.index];
     sampler_uniform.texture = texture;
-    u.SetValue(std::span(reinterpret_cast<const ui8*>(&sampler_uniform), sizeof(sampler_uniform)));
+    u.SetValue(std::span(reinterpret_cast<const uint8_t*>(&sampler_uniform), sizeof(sampler_uniform)));
 }
 
 void Shader::SendUniforms()
@@ -573,7 +573,7 @@ void Shader::UpdateUniforms()
         }
 
         const GLint location = glGetUniformLocation(*program_, variable_name.GetView().data());
-        uniforms.back().SetLocation(static_cast<ui32>(location));
+        uniforms.back().SetLocation(static_cast<uint32_t>(location));
     }
 
     std::swap(uniforms, uniforms_);
@@ -584,10 +584,10 @@ void Shader::UpdateUniforms()
         constexpr edt::GUID sampler_uniform_guid = cppreflection::GetStaticTypeInfo<SamplerUniform>().guid;
         if (uniform.GetTypeGUID() == sampler_uniform_guid)
         {
-            UniformHandle handle{static_cast<ui32>(i), uniform.GetName()};
+            UniformHandle handle{static_cast<uint32_t>(i), uniform.GetName()};
             auto sampler = GetUniformValue<SamplerUniform>(handle);
-            sampler.sampler_index = static_cast<ui8>(i);
-            uniform.SetValue(std::span(reinterpret_cast<const ui8*>(&sampler), sizeof(sampler)));
+            sampler.sampler_index = static_cast<uint8_t>(i);
+            uniform.SetValue(std::span(reinterpret_cast<const uint8_t*>(&sampler), sizeof(sampler)));
         }
     }
 }

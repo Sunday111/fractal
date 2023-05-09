@@ -3,12 +3,10 @@
 #include <limits>
 #include <string_view>
 
-#include "klgl/integer.hpp"
-
 class Name
 {
 public:
-    using NameId = ui32;
+    using NameId = uint32_t;
     static constexpr NameId kInvalidNameId = std::numeric_limits<NameId>::max();
 
 public:

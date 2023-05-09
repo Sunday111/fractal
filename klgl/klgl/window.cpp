@@ -6,7 +6,7 @@
 
 #include "GLFW/glfw3.h"
 
-Window::Window(ui32 width, ui32 height) : id_(MakeWindowId()), width_(width), height_(height)
+Window::Window(uint32_t width, uint32_t height) : id_(MakeWindowId()), width_(width), height_(height)
 {
     Create();
 }
@@ -44,9 +44,9 @@ void Window::SwapBuffers() noexcept
     glfwSwapBuffers(window_);
 }
 
-ui32 Window::MakeWindowId()
+uint32_t Window::MakeWindowId()
 {
-    static ui32 next_id = 0;
+    static uint32_t next_id = 0;
     return next_id++;
 }
 
@@ -118,8 +118,8 @@ void Window::Destroy()
 
 void Window::OnResize(int width, int height)
 {
-    width_ = static_cast<ui32>(width);
-    height_ = static_cast<ui32>(height);
+    width_ = static_cast<uint32_t>(width);
+    height_ = static_cast<uint32_t>(height);
 }
 
 void Window::OnMouseMove(Eigen::Vector2f new_cursor)

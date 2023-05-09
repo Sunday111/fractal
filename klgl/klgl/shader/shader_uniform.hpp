@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "EverydayTools/GUID.hpp"
-#include "klgl/integer.hpp"
 #include "klgl/name_cache/name.hpp"
 
 class ShaderUniform
@@ -17,13 +16,13 @@ public:
     ShaderUniform(ShaderUniform&& another);
     void MoveFrom(ShaderUniform& another);
     void SendValue() const;
-    void SetValue(std::span<const ui8> new_value);
+    void SetValue(std::span<const uint8_t> new_value);
     void SetType(edt::GUID type_guid);
     void SetName(Name name)
     {
         name_ = name;
     }
-    void SetLocation(ui32 location)
+    void SetLocation(uint32_t location)
     {
         location_ = location;
     }
@@ -38,13 +37,13 @@ public:
     {
         return type_guid_;
     }
-    [[nodiscard]] ui32 GetLocation() const noexcept
+    [[nodiscard]] uint32_t GetLocation() const noexcept
     {
         return location_;
     }
 
-    //[[nodiscard]] std::span<ui8> GetValue() noexcept { return value_; }
-    [[nodiscard]] std::span<const ui8> GetValue() const noexcept
+    //[[nodiscard]] std::span<uint8_t> GetValue() noexcept { return value_; }
+    [[nodiscard]] std::span<const uint8_t> GetValue() const noexcept
     {
         return value_;
     }
@@ -57,9 +56,9 @@ private:
     void CheckNotEmpty() const;
 
 private:
-    std::vector<ui8> value_;
+    std::vector<uint8_t> value_;
     Name name_;
-    ui32 location_;
+    uint32_t location_;
     edt::GUID type_guid_;
     mutable bool sent_ = false;
 };

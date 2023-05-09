@@ -12,7 +12,7 @@
 template <typename T>
 struct ValueTypeHelper
 {
-    static bool Exec(edt::GUID type_guid, ui32 location, std::span<const ui8> value)
+    static bool Exec(edt::GUID type_guid, uint32_t location, std::span<const uint8_t> value)
     {
         if (cppreflection::GetStaticTypeInfo<T>().guid == type_guid)
         {
@@ -27,7 +27,8 @@ struct ValueTypeHelper
 template <>
 struct ValueTypeHelper<SamplerUniform>
 {
-    static bool Exec(edt::GUID type_guid, [[maybe_unused]] ui32 location, [[maybe_unused]] std::span<const ui8> value)
+    static bool
+    Exec(edt::GUID type_guid, [[maybe_unused]] uint32_t location, [[maybe_unused]] std::span<const uint8_t> value)
     {
         if (cppreflection::GetStaticTypeInfo<SamplerUniform>().guid == type_guid)
         {
@@ -47,7 +48,7 @@ struct ValueTypeHelper<SamplerUniform>
 };
 
 template <typename T>
-bool SendActualValue(edt::GUID type_guid, ui32 location, std::span<const ui8> value)
+bool SendActualValue(edt::GUID type_guid, uint32_t location, std::span<const uint8_t> value)
 {
     return ValueTypeHelper<T>::Exec(type_guid, location, value);
 }
@@ -128,7 +129,7 @@ bool ShaderUniform::IsEmpty() const noexcept
     return value_.empty();
 }
 
-void ShaderUniform::SetValue(std::span<const ui8> value)
+void ShaderUniform::SetValue(std::span<const uint8_t> value)
 {
     CheckNotEmpty();
     sent_ = false;

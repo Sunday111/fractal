@@ -5,6 +5,6 @@
 class UniformHandle
 {
 public:
-    ui32 index = 0;
+    uint32_t index = 0;
     Name name;
 };
