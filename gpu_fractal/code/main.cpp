@@ -63,11 +63,13 @@ void FractalApp::Initialize()
     shader = std::make_unique<Shader>("simple.shader.json");
     shader->Use();
 
-    const std::array<Eigen::Vector3f, 6> vertices{
-        {Eigen::Vector3f{1.0f, 1.0f, 0.0f},
-         Eigen::Vector3f{1.0f, -1.0f, 0.0f},
-         Eigen::Vector3f{-1.0f, -1.0f, 0.0f},
-         Eigen::Vector3f{-1.0f, 1.0f, 0.0f}}};
+    // clang-format off
+    const std::array<Eigen::Vector2f, 4> vertices{
+        {{1.0f, 1.0f},
+         {1.0f, -1.0f},
+         {-1.0f, -1.0f},
+         {-1.0f, 1.0f}}};
+    // clang-format on
 
     const std::array<Eigen::Vector3i, 2> indices{{{0, 1, 3}, {1, 2, 3}}};
 
@@ -79,7 +81,7 @@ void FractalApp::Initialize()
     OpenGl::BufferData(GL_ARRAY_BUFFER, std::span{vertices}, GL_STATIC_DRAW);
     OpenGl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     OpenGl::BufferData(GL_ELEMENT_ARRAY_BUFFER, std::span{indices}, GL_STATIC_DRAW);
-    OpenGl::VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
+    OpenGl::VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
     OpenGl::EnableVertexAttribArray(0);
 
     pos_loc = shader->GetUniform("uCameraPos");
