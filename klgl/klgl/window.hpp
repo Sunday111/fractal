@@ -26,6 +26,15 @@ public:
     {
         return height_;
     }
+
+    Eigen::Vector2<uint32_t> GetSize() const
+    {
+        return {width_, height_};
+    }
+    Eigen::Vector2f GetSize2f() const
+    {
+        return GetSize().cast<float>();
+    }
     [[nodiscard]] GLFWwindow* GetGlfwWindow() const noexcept
     {
         return window_;
@@ -36,6 +45,8 @@ public:
     }
 
     void SwapBuffers() noexcept;
+
+    bool IsKeyPressed(int key) const;
 
 private:
     static uint32_t MakeWindowId();

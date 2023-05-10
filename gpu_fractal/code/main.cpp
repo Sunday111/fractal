@@ -10,6 +10,7 @@
 
 #include "fmt/format.h"
 #include "klgl/application.hpp"
+#include "klgl/mesh/mesh_data.hpp"
 #include "klgl/opengl/debug/annotations.hpp"
 #include "klgl/opengl/gl_api.hpp"
 #include "klgl/reflection/register_types.hpp"
@@ -18,12 +19,6 @@
 #include "klgl/wrap/wrap_glfw.hpp"
 #include "klgl/wrap/wrap_imgui.hpp"
 
-constexpr double min_x = -2.0;
-constexpr double max_x = 0.47;
-constexpr double min_y = -1.12;
-constexpr double max_y = 1.12;
-constexpr double scale_factor = 0.95;
-
 using namespace klgl;
 
 class FractalApp : public Application
@@ -31,15 +26,18 @@ class FractalApp : public Application
 public:
     using Super = Application;
 
+    constexpr static double scale_factor = 0.95;
+    constexpr static float pan_step = 0.1f;
+
     virtual void Initialize() override;
     virtual void Tick() override;
 
 private:
+    Eigen::Vector2d global_min_coord;
+    Eigen::Vector2d global_max_coord;
+    Eigen::Vector2d global_coord_range;
     Eigen::Vector2d camera;
     Eigen::Vector3f color_seed;
-    GLuint vao;
-    GLuint vbo;
-    GLuint ebo;
     UniformHandle pos_loc;
     UniformHandle scale_loc;
     UniformHandle color_seed_loc;
@@ -47,6 +45,7 @@ private:
     int scale_i = 0;
 
     std::unique_ptr<Shader> shader;
+    std::unique_ptr<MeshOpenGL> quad_mesh;
 };
 
 void FractalApp::Initialize()
@@ -57,70 +56,49 @@ void FractalApp::Initialize()
     const auto shaders_dir = content_dir / "shaders";
     Shader::shaders_dir_ = shaders_dir;
 
-    camera = {min_x + (max_x - min_x) / 2, min_y + (max_y - min_y) / 2};
+    global_min_coord = {-2.0, -1.12};
+    global_max_coord = {0.47, 1.12};
+    global_coord_range = global_max_coord - global_min_coord;
+    camera = global_min_coord + global_coord_range / 2;
     color_seed = {0.3f, 0.3f, 0.3f};
 
     shader = std::make_unique<Shader>("simple.shader.json");
     shader->Use();
 
-    // clang-format off
-    const std::array<Eigen::Vector2f, 4> vertices{
-        {{1.0f, 1.0f},
-         {1.0f, -1.0f},
-         {-1.0f, -1.0f},
-         {-1.0f, 1.0f}}};
-    // clang-format on
-
-    const std::array<Eigen::Vector3i, 2> indices{{{0, 1, 3}, {1, 2, 3}}};
-
-    vao = OpenGl::GenVertexArray();
-    vbo = OpenGl::GenBuffer();
-    ebo = OpenGl::GenBuffer();
-    OpenGl::BindVertexArray(vao);
-    OpenGl::BindBuffer(GL_ARRAY_BUFFER, vbo);
-    OpenGl::BufferData(GL_ARRAY_BUFFER, std::span{vertices}, GL_STATIC_DRAW);
-    OpenGl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    OpenGl::BufferData(GL_ELEMENT_ARRAY_BUFFER, std::span{indices}, GL_STATIC_DRAW);
-    OpenGl::VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), nullptr);
-    OpenGl::EnableVertexAttribArray(0);
-
     pos_loc = shader->GetUniform("uCameraPos");
     scale_loc = shader->GetUniform("uScale");
     color_seed_loc = shader->GetUniform("uColorSeed");
     viewport_size_loc = shader->GetUniform("uViewportSize");
+
+    MeshData mesh_data = MeshData::MakeIndexedQuad();
+    quad_mesh = MeshOpenGL::MakeFromData(mesh_data);
+    OpenGl::VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(mesh_data.vertices[0]), nullptr);
+    OpenGl::EnableVertexAttribArray(0);
 }
 
 void FractalApp::Tick()
 {
     Super::Tick();
 
-    auto is_key_down = [&](auto key)
-    {
-        return glfwGetKey(GetWindow().GetGlfwWindow(), key) == GLFW_PRESS;
-    };
-
-    if (is_key_down(GLFW_KEY_E)) scale_i += 1;
-    if (is_key_down(GLFW_KEY_Q)) scale_i = std::max(scale_i - 1, 0);
+    Window& window = GetWindow();
+    if (window.IsKeyPressed(GLFW_KEY_E)) scale_i += 1;
+    if (window.IsKeyPressed(GLFW_KEY_Q)) scale_i = std::max(scale_i - 1, 0);
     const double scale = std::pow(scale_factor, scale_i);
-    const double x_range = (max_x - min_x) * scale;
-    const double y_range = (max_y - min_y) * scale;
-    if (is_key_down(GLFW_KEY_W)) camera.y() += y_range * 0.01;
-    if (is_key_down(GLFW_KEY_S)) camera.y() -= y_range * 0.01;
-    if (is_key_down(GLFW_KEY_A)) camera.x() -= x_range * 0.01;
-    if (is_key_down(GLFW_KEY_D)) camera.x() += x_range * 0.01;
+    auto scaled_coord_range = global_coord_range * scale;
+    if (window.IsKeyPressed(GLFW_KEY_W)) camera.y() += scaled_coord_range.y() * pan_step;
+    if (window.IsKeyPressed(GLFW_KEY_S)) camera.y() -= scaled_coord_range.y() * pan_step;
+    if (window.IsKeyPressed(GLFW_KEY_A)) camera.x() -= scaled_coord_range.x() * pan_step;
+    if (window.IsKeyPressed(GLFW_KEY_D)) camera.x() += scaled_coord_range.x() * pan_step;
 
-    Eigen::Vector2f camera_f = camera.cast<float>();
+    const Eigen::Vector2f camera_f = camera.cast<float>();
     shader->SetUniform(pos_loc, camera_f);
     shader->SetUniform(scale_loc, static_cast<float>(scale));
     shader->SetUniform(color_seed_loc, color_seed);
-    shader->SetUniform(
-        viewport_size_loc,
-        Eigen::Vector2f(static_cast<float>(GetWindow().GetWidth()), static_cast<float>(GetWindow().GetHeight())));
+    shader->SetUniform(viewport_size_loc, window.GetSize2f());
     shader->SendUniforms();
     shader->Use();
 
-    OpenGl::BindVertexArray(vao);
-    OpenGl::DrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    quad_mesh->Draw();
 
     ImGui::Begin("Parameters");
     ImGui::SliderFloat3("Color Seed", color_seed.data(), 0.0f, 1.0f, "%.12f");
@@ -136,6 +114,7 @@ void FractalApp::Tick()
     {
         shader->DrawDetails();
     }
+
     ImGui::End();
 }
 

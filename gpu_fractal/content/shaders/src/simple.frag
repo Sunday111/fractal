@@ -6,13 +6,11 @@ out vec4 fragColor;
 
 #define MAX_ITERATIONS 1000
 
-#define ChannelValue(channel)                                                                          \
-    float ChannelValue##channel(int iteration){                                                        \
-        int offset = MAX_ITERATIONS / 3;                                                         \
-        int center = (offset * (2 * channel + 3) / 2);                                           \
-        float seeded = mod(float(center) + uColorSeed[channel] * MAX_ITERATIONS, MAX_ITERATIONS);        \
-        float rel_dist = (float(iteration) - seeded) / (MAX_ITERATIONS - center);                \
-        return abs(rel_dist);                                                                          \
+#define ChannelValue(channel)                                                                    \
+    float ChannelValue##channel(int iteration){                                                  \
+        float seeded = uColorSeed[channel] * MAX_ITERATIONS;                                     \
+        float rel_dist = (float(iteration) - seeded) / (MAX_ITERATIONS - seeded);                \
+        return abs(rel_dist);                                                                    \
     }
 
 ChannelValue(0)

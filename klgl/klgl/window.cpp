@@ -47,6 +47,11 @@ void Window::SwapBuffers() noexcept
     glfwSwapBuffers(window_);
 }
 
+bool Window::IsKeyPressed(int key) const
+{
+    return glfwGetKey(window_, key) == GLFW_PRESS;
+}
+
 uint32_t Window::MakeWindowId()
 {
     static uint32_t next_id = 0;
