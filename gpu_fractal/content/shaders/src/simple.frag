@@ -1,28 +1,30 @@
+#define MAX_ITERATIONS 1000
+#define COLORS_COUNT 10
+
 uniform vec2 uCameraPos;
 uniform vec2 uViewportSize;
 uniform float uScale;
-uniform vec3 uColorSeed;
+uniform vec3 uColorTable[COLORS_COUNT];
 out vec4 fragColor;
 
-#define MAX_ITERATIONS 1000
-
-#define ChannelValue(channel)                                                                    \
-    float ChannelValue##channel(int iteration){                                                  \
-        float seeded = uColorSeed[channel] * MAX_ITERATIONS;                                     \
-        float rel_dist = (float(iteration) - seeded) / (MAX_ITERATIONS - seeded);                \
-        return abs(rel_dist);                                                                    \
-    }
-
-ChannelValue(0)
-ChannelValue(1)
-ChannelValue(2)
+vec3 GetColorByIndex(int index)
+{
+    return uColorTable[index];
+}
 
 vec3 ColorForIteration(int iteration)
 {
     if (iteration == MAX_ITERATIONS)
         return vec3(0, 0, 0);
 
-    return vec3(ChannelValue0(iteration), ChannelValue1(iteration), ChannelValue2(iteration));
+    const int segments_count = COLORS_COUNT - 1;
+    const int iterations_per_segment = MAX_ITERATIONS / segments_count;
+    int k = iteration * segments_count;
+    int first_color_index = k / MAX_ITERATIONS;
+    vec3 color_a = GetColorByIndex(first_color_index);
+    vec3 color_b = GetColorByIndex(first_color_index + 1);
+    float p = float(k % iterations_per_segment) / iterations_per_segment;
+    return color_a + p * (color_b - color_a);
 }
 
 int DoMandelbrotLoop(vec2 p0)

@@ -367,6 +367,7 @@ UniformHandle Shader::GetUniform(Name name) const
         return *maybe_handle;
     }
 
+    fmt::print("Uniform is not found: \"{}\"\n", name.GetView());
     throw std::runtime_error(fmt::format("Uniform is not found: \"{}\"", name.GetView()));
 }
 
@@ -540,8 +541,6 @@ void Shader::UpdateUniforms()
             name_buffer);
 
         const std::string_view variable_name_view(name_buffer, static_cast<size_t>(actual_name_length));
-        const Name variable_name(variable_name_view);
-
         const std::optional<edt::GUID> cpp_type = ConvertGlType(glsl_type);
         if (!cpp_type)
         {
@@ -549,34 +548,53 @@ void Shader::UpdateUniforms()
             continue;
         }
 
-        // find existing variable
-        auto found_uniform_it = std::find_if(
-            uniforms_.begin(),
-            uniforms_.end(),
-            [&](const ShaderUniform& u)
-            {
-                return u.GetName() == variable_name;
-            });
-
-        if (found_uniform_it != uniforms_.end())
+        auto get_or_add = [&uniforms, &cpp_type, this](std::string_view name)
         {
-            uniforms.push_back(std::move(*found_uniform_it));
-            // the previous value can be saved only if variable has the same type
-            if (*cpp_type != found_uniform_it->GetTypeGUID())
+            // find existing variable
+            auto found_uniform_it = std::find_if(
+                uniforms_.begin(),
+                uniforms_.end(),
+                [&](const ShaderUniform& u)
+                {
+                    return u.GetName() == name;
+                });
+
+            if (found_uniform_it != uniforms_.end())
             {
-                uniforms.back().SetType(*cpp_type);
+                uniforms.push_back(std::move(*found_uniform_it));
+                // the previous value can be saved only if variable has the same type
+                if (*cpp_type != found_uniform_it->GetTypeGUID())
+                {
+                    uniforms.back().SetType(*cpp_type);
+                }
             }
+            else
+            {
+                uniforms.emplace_back();
+                auto& uniform = uniforms.back();
+                uniform.SetName(Name(name));
+                uniform.SetType(*cpp_type);
+            }
+
+            const GLint location = glGetUniformLocation(*program_, name.data());
+            uniforms.back().SetLocation(static_cast<uint32_t>(location));
+        };
+
+        if (variable_size == 1)
+        {
+            get_or_add(variable_name_view);
         }
         else
         {
-            uniforms.emplace_back();
-            auto& uniform = uniforms.back();
-            uniform.SetName(variable_name);
-            uniform.SetType(*cpp_type);
+            std::string name_with_index(variable_name_view);
+            const size_t name_no_index_size = name_with_index.find('[');
+            for (size_t element_index = 0; element_index != variable_size; ++element_index)
+            {
+                name_with_index.resize(name_no_index_size);
+                fmt::format_to(std::back_inserter(name_with_index), "[{}]", element_index);
+                get_or_add(name_with_index);
+            }
         }
-
-        const GLint location = glGetUniformLocation(*program_, variable_name.GetView().data());
-        uniforms.back().SetLocation(static_cast<uint32_t>(location));
     }
 
     std::swap(uniforms, uniforms_);

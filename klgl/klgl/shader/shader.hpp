@@ -67,6 +67,11 @@ public:
             std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(T)));
     }
 
+    std::optional<GLuint> GetProgram() const
+    {
+        return program_;
+    }
+
 protected:
     ShaderUniform& GetUniform(UniformHandle& handle);
     const ShaderUniform& GetUniform(UniformHandle& handle) const;

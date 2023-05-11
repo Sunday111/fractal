@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <random>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
@@ -28,6 +29,7 @@ public:
 
     constexpr static double scale_factor = 0.95;
     constexpr static float pan_step = 0.1f;
+    constexpr static size_t colors_count = 10;
 
     virtual void Initialize() override;
     virtual void Tick() override;
@@ -37,15 +39,16 @@ private:
     Eigen::Vector2d global_max_coord;
     Eigen::Vector2d global_coord_range;
     Eigen::Vector2d camera;
-    Eigen::Vector3f color_seed;
     UniformHandle pos_loc;
     UniformHandle scale_loc;
-    UniformHandle color_seed_loc;
     UniformHandle viewport_size_loc;
     int scale_i = 0;
+    int color_seed = 1234;
 
     std::unique_ptr<Shader> shader;
     std::unique_ptr<MeshOpenGL> quad_mesh;
+    std::array<Eigen::Vector3f, colors_count> colors;
+    std::array<UniformHandle, colors_count> colors_uniforms;
 };
 
 void FractalApp::Initialize()
@@ -60,15 +63,21 @@ void FractalApp::Initialize()
     global_max_coord = {0.47, 1.12};
     global_coord_range = global_max_coord - global_min_coord;
     camera = global_min_coord + global_coord_range / 2;
-    color_seed = {0.3f, 0.3f, 0.3f};
 
     shader = std::make_unique<Shader>("simple.shader.json");
     shader->Use();
 
     pos_loc = shader->GetUniform("uCameraPos");
     scale_loc = shader->GetUniform("uScale");
-    color_seed_loc = shader->GetUniform("uColorSeed");
     viewport_size_loc = shader->GetUniform("uViewportSize");
+
+    std::string tmp;
+    for (size_t i = 0; i != colors_uniforms.size(); ++i)
+    {
+        tmp.clear();
+        fmt::format_to(std::back_inserter(tmp), "uColorTable[{}]", i);
+        colors_uniforms[i] = shader->GetUniform(tmp.data());
+    }
 
     MeshData mesh_data = MeshData::MakeIndexedQuad();
     quad_mesh = MeshOpenGL::MakeFromData(mesh_data);
@@ -93,15 +102,50 @@ void FractalApp::Tick()
     const Eigen::Vector2f camera_f = camera.cast<float>();
     shader->SetUniform(pos_loc, camera_f);
     shader->SetUniform(scale_loc, static_cast<float>(scale));
-    shader->SetUniform(color_seed_loc, color_seed);
     shader->SetUniform(viewport_size_loc, window.GetSize2f());
+    for (size_t color_index = 0; color_index != colors_count; ++color_index)
+    {
+        shader->SetUniform(colors_uniforms[color_index], colors[color_index]);
+    }
     shader->SendUniforms();
     shader->Use();
 
     quad_mesh->Draw();
 
     ImGui::Begin("Parameters");
-    ImGui::SliderFloat3("Color Seed", color_seed.data(), 0.0f, 1.0f, "%.12f");
+
+    if (ImGui::CollapsingHeader("Colors"))
+    {
+        for (size_t color_index = 0; color_index != colors.size(); ++color_index)
+        {
+            if (color_index)
+            {
+                ImGui::SameLine();
+            }
+
+            constexpr int color_edit_flags =
+                ImGuiColorEditFlags_DefaultOptions_ | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel;
+            auto& color = colors[color_index];
+            ImGui::PushID(&color);
+            ImGui::ColorEdit3("Color", color.data(), color_edit_flags);
+            ImGui::PopID();
+        }
+
+        ImGui::InputInt("Color Seed: 1234", &color_seed);
+        ImGui::SameLine();
+        if (ImGui::Button("Randomize"))
+        {
+            std::mt19937 rnd(static_cast<unsigned>(color_seed));
+            std::uniform_real_distribution<float> color_distr(0, 1.0f);
+            for (auto& color : colors)
+            {
+                for (float& v : color)
+                {
+                    v = color_distr(rnd);
+                }
+            }
+        }
+    }
 
     if (ImGui::CollapsingHeader("Camera"))
     {
