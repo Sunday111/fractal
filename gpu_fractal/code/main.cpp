@@ -24,6 +24,7 @@
 #include "lib_fractal/lib_fractal.hpp"
 #include "mesh_vertex.hpp"
 #include "rendering_backend_cpu.hpp"
+#include "rendering_backend_gpu.hpp"
 
 using namespace klgl;
 
@@ -32,23 +33,17 @@ class FractalApp : public Application
 public:
     using Super = Application;
 
+    void DrawSettings();
+
     virtual void Initialize() override;
     virtual void Tick(float dt) override;
     virtual void PostTick(float dt) override;
 
 private:
     bool render_on_cpu = true;
-
     FractalSettings settings;
-    UniformHandle pos_loc;
-    UniformHandle scale_loc;
-    UniformHandle viewport_size_loc;
-
-    std::unique_ptr<Shader> shader;
-    std::unique_ptr<MeshOpenGL> quad_mesh;
-    std::array<UniformHandle, FractalSettings::colors_count> colors_uniforms;
-
     std::unique_ptr<FractalRenderingBackendCPU> rendering_backend_cpu_;
+    std::unique_ptr<FractalRenderingBackendGPU> rendering_backend_gpu_;
 };
 
 void FractalApp::Initialize()
@@ -58,31 +53,6 @@ void FractalApp::Initialize()
     const auto content_dir = GetExecutableDir() / "content";
     const auto shaders_dir = content_dir / "shaders";
     Shader::shaders_dir_ = shaders_dir;
-
-    shader = std::make_unique<Shader>("simple.shader.json");
-
-    pos_loc = shader->GetUniform("uCameraPos");
-    scale_loc = shader->GetUniform("uScale");
-    viewport_size_loc = shader->GetUniform("uViewportSize");
-
-    size_t uniforms_count = colors_uniforms.size();
-    for (size_t i = 0; i != uniforms_count; ++i)
-    {
-        std::string uniform_name = fmt::format("uColorTable[{}]", i);
-        colors_uniforms[i] = shader->GetUniform(uniform_name.data());
-    }
-
-    const std::array<MeshVertex, 4> vertices{
-        {{.position = {1.0f, 1.0f}, .tex_coord = {1.0f, 1.0f}},
-         {.position = {1.0f, -1.0f}, .tex_coord = {1.0f, 0.0f}},
-         {.position = {-1.0f, -1.0f}, .tex_coord = {0.0f, 0.0f}},
-         {.position = {-1.0f, 1.0f}, .tex_coord = {0.0f, 1.0f}}}};
-    const std::array<uint32_t, 6> indices{0, 1, 3, 1, 2, 3};
-
-    quad_mesh = MeshOpenGL::MakeFromData<MeshVertex>(std::span{vertices}, std::span{indices});
-    quad_mesh->Bind();
-    RegisterAttribute<&MeshVertex::position>(0, false);
-    RegisterAttribute<&MeshVertex::tex_coord>(1, false);
 }
 
 void FractalApp::Tick(float delta_time)
@@ -112,20 +82,31 @@ void FractalApp::Tick(float delta_time)
     }
     else
     {
-        ScopeAnnotation annotation("Render fractal on gpu");
-        const Eigen::Vector2f camera_f = settings.camera.cast<float>();
-        shader->SetUniform(pos_loc, camera_f);
-        shader->SetUniform(scale_loc, static_cast<float>(scale));
-        shader->SetUniform(viewport_size_loc, window.GetSize2f());
-        for (size_t color_index = 0; color_index != colors_uniforms.size(); ++color_index)
+        if (!rendering_backend_gpu_)
         {
-            shader->SetUniform(colors_uniforms[color_index], settings.colors[color_index]);
+            rendering_backend_gpu_ = std::make_unique<FractalRenderingBackendGPU>(*this, settings);
         }
-        shader->SendUniforms();
-        shader->Use();
-        quad_mesh->BindAndDraw();
+
+        rendering_backend_gpu_->Draw();
     }
 
+    DrawSettings();
+
+    ImGui::End();
+}
+
+void FractalApp::PostTick(float delta_time)
+{
+    Super::PostTick(delta_time);
+
+    if (rendering_backend_cpu_)
+    {
+        rendering_backend_cpu_->PostDraw();
+    }
+}
+
+void FractalApp::DrawSettings()
+{
     bool settings_changed = false;
     ImGui::Begin("Parameters");
 
@@ -175,26 +156,9 @@ void FractalApp::Tick(float delta_time)
         settings_changed |= ImGui::InputInt("Zoom", &settings.scale_i);
     }
 
-    if (ImGui::CollapsingHeader("Shader"))
-    {
-        shader->DrawDetails();
-    }
-
     if (settings_changed)
     {
         settings.settings_applied = false;
-    }
-
-    ImGui::End();
-}
-
-void FractalApp::PostTick(float delta_time)
-{
-    Super::PostTick(delta_time);
-
-    if (rendering_backend_cpu_)
-    {
-        rendering_backend_cpu_->PostDraw();
     }
 }
 

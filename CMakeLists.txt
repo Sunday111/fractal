@@ -7,5 +7,4 @@ include(FetchContent)
 
 add_subdirectory(klgl)
 add_subdirectory(lib_fractal)
-#add_subdirectory(cpu_fractal)
 add_subdirectory(gpu_fractal)
