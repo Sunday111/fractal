@@ -59,8 +59,8 @@ void Application::Initialize()
 #endif
 
     {
-        uint32_t window_width = 800;
-        uint32_t window_height = 800;
+        uint32_t window_width = 900;
+        uint32_t window_height = 900;
         if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
         {
             float x_scale = 0.f, y_scale = 0.f;

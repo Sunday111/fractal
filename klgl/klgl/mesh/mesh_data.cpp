@@ -4,6 +4,8 @@
 #include <array>
 #include <ranges>
 
+#include "klgl/opengl/debug/annotations.hpp"
+
 namespace klgl
 {
 MeshData MeshData::MakeIndexedQuad()
@@ -28,26 +30,20 @@ void MeshOpenGL::Bind() const
 
 void MeshOpenGL::Draw() const
 {
-    Bind();
+    assert(topology == GL_TRIANGLES);
     OpenGl::DrawElements(topology, elements_count, GL_UNSIGNED_INT, nullptr);
 }
 
-std::unique_ptr<MeshOpenGL> MeshOpenGL::MakeFromData(const MeshData& mesh_data)
+void MeshOpenGL::BindAndDraw() const
 {
-    auto mesh = std::make_unique<MeshOpenGL>();
+    Bind();
+    Draw();
+}
 
-    mesh->vao = OpenGl::GenVertexArray();
-    mesh->vbo = OpenGl::GenBuffer();
-    mesh->ebo = OpenGl::GenBuffer();
-
-    mesh->Bind();
-    OpenGl::BindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-    OpenGl::BufferData(GL_ARRAY_BUFFER, std::span{mesh_data.vertices}, GL_STATIC_DRAW);
-    OpenGl::BindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-    OpenGl::BufferData(GL_ELEMENT_ARRAY_BUFFER, std::span{mesh_data.indices}, GL_STATIC_DRAW);
-
-    mesh->elements_count = mesh_data.indices.size() * 3;
-
-    return mesh;
+MeshOpenGL::~MeshOpenGL()
+{
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
+    glDeleteVertexArrays(1, &vao);
 }
 }  // namespace klgl

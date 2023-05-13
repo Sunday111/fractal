@@ -36,7 +36,7 @@ public:
     UniformHandle GetUniform(Name name) const;
     void SetUniform(UniformHandle& handle, edt::GUID type_guid, std::span<const uint8_t> data);
 
-    void SetUniform(UniformHandle& handle, const std::shared_ptr<Texture>& texture);
+    void SetUniform(UniformHandle& handle, const Texture& texture);
 
     template <typename T>
     void SetUniform(UniformHandle& handle, const T& value)

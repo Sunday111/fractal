@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+#include "klgl/opengl/debug/annotations.hpp"
+
 namespace klgl
 {
 
@@ -119,6 +121,7 @@ void OpenGl::UseProgram(GLuint program) noexcept
 
 void OpenGl::DrawElements(GLenum mode, size_t num, GLenum indices_type, const void* indices) noexcept
 {
+    ScopeAnnotation annotation("OpenGl::Draw");
     glDrawElements(mode, static_cast<GLsizei>(num), indices_type, indices);
 }
 

@@ -2,6 +2,8 @@
 
 #include "klgl/opengl/gl_api.hpp"
 
+#define ENABLE_RENDERING_ANNOTATIONS
+
 namespace klgl
 {
 

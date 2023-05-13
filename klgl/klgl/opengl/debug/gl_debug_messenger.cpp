@@ -8,9 +8,9 @@ namespace klgl
 
 void GlDebugMessenger::Start()
 {
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(GlDebugMessenger::DebugProc, nullptr);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    // glEnable(GL_DEBUG_OUTPUT);
+    //  glDebugMessageCallback(GlDebugMessenger::DebugProc, nullptr);
+    //  glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 }
 
 #define CASE_RET_STR(val, name) \

@@ -16,6 +16,7 @@
 #include "klgl/shader/shader_define.hpp"
 #include "klgl/shader/shader_uniform.hpp"
 #include "klgl/template/on_scope_leave.hpp"
+#include "klgl/texture/texture.hpp"
 #include "klgl/type_id_widget.hpp"
 #include "klgl/wrap/wrap_imgui.hpp"
 #include "nlohmann/json.hpp"
@@ -413,11 +414,11 @@ void Shader::SetUniform(UniformHandle& handle, edt::GUID type_guid, std::span<co
     uniform.SetValue(value);
 }
 
-void Shader::SetUniform(UniformHandle& handle, const std::shared_ptr<Texture>& texture)
+void Shader::SetUniform(UniformHandle& handle, const Texture& texture)
 {
     auto sampler_uniform = GetUniformValue<SamplerUniform>(handle);
     ShaderUniform& u = uniforms_[handle.index];
-    sampler_uniform.texture = texture;
+    sampler_uniform.texture = *texture.GetTexture();
     u.SetValue(std::span(reinterpret_cast<const uint8_t*>(&sampler_uniform), sizeof(sampler_uniform)));
 }
 

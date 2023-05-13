@@ -5,6 +5,7 @@
 #include "CppReflection/TypeRegistry.hpp"
 #include "EverydayTools/GUID_fmtlib.hpp"
 #include "fmt/format.h"
+#include "klgl/opengl/debug/annotations.hpp"
 #include "klgl/opengl/gl_api.hpp"
 #include "klgl/reflection/eigen_reflect.hpp"
 #include "klgl/shader/sampler_uniform.hpp"
@@ -35,13 +36,11 @@ struct ValueTypeHelper<SamplerUniform>
     {
         if (cppreflection::GetStaticTypeInfo<SamplerUniform>().guid == type_guid)
         {
-            assert(false);
-            // auto& v = *reinterpret_cast<const SamplerUniform*>(value.data());
-            // const auto texture_handle = v.texture->GetHandle();
-            // static_assert(GL_TEXTURE31 - GL_TEXTURE0 == 31);
-            // glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + v.sampler_index));
-            // glBindTexture(GL_TEXTURE_2D, texture_handle);
-            // glUniform1i(static_cast<GLint>(location), static_cast<GLint>(v.sampler_index));
+            auto& v = *reinterpret_cast<const SamplerUniform*>(value.data());
+            static_assert(GL_TEXTURE31 - GL_TEXTURE0 == 31);
+            glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + v.sampler_index));
+            glBindTexture(GL_TEXTURE_2D, v.texture);
+            glUniform1i(static_cast<GLint>(location), static_cast<GLint>(v.sampler_index));
 
             return true;
         }

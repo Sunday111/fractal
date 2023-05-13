@@ -3,19 +3,16 @@
 #include <memory>
 
 #include "CppReflection/GetStaticTypeInfo.hpp"
+#include "klgl/opengl/gl_api.hpp"
 
 namespace klgl
 {
-
-class Texture
-{
-};
 
 class SamplerUniform
 {
 public:
     uint8_t sampler_index;
-    std::shared_ptr<Texture> texture;
+    GLuint texture;
 };
 
 }  // namespace klgl
