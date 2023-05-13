@@ -100,14 +100,22 @@ public:
         return state_;
     }
 
-    std::span<const Eigen::Vector3<uint8_t>> GetPixels() const
+    bool HasNewData() const
     {
+        return has_new_data_ && state_ == State::Pending;
+    }
+
+    std::span<const Eigen::Vector3<uint8_t>> ConsumePixels()
+    {
+        assert(HasNewData());
+        has_new_data_ = false;
         return std::span{pixels};
     }
 
     void SetTask(Eigen::Vector2<size_t> region_location, Eigen::Vector2<size_t> region_size)
     {
         assert(state_ == State::Pending);
+        has_new_data_ = true;
         location = region_location;
         size = region_size;
         state_ = State::InProgress;
@@ -184,12 +192,7 @@ private:
     std::atomic<State> state_ = State::Pending;
     std::vector<Eigen::Vector3<uint8_t>> pixels;
     std::shared_ptr<const CommonSettings> settings;
-};
-
-struct FractalRegion
-{
-    bool has_new_data = false;
-    std::unique_ptr<FractalCPURenderingThread> thread;
+    bool has_new_data_ = false;
 };
 
 class FractalApp : public Application
@@ -227,7 +230,8 @@ private:
     std::array<UniformHandle, FractalSettings::colors_count> colors_uniforms;
 
     // CPU rendering
-    std::vector<FractalRegion> regions;  // fractal regions that will be rendered in another thread
+    // fractal regions that will be rendered in another thread
+    std::vector<std::unique_ptr<FractalCPURenderingThread>> regions;
     std::unique_ptr<Texture> texture;
     UniformHandle texture_loc;
     std::shared_ptr<FractalCPURenderingThread::CommonSettings> threads_settings_;
@@ -278,12 +282,11 @@ void FractalApp::Initialize()
     render_texture_shader = std::make_unique<Shader>("just_texture.shader.json");
     texture_loc = render_texture_shader->GetUniform("uTexture");
 
-    std::string tmp;
-    for (size_t i = 0; i != colors_uniforms.size(); ++i)
+    size_t uniforms_count = colors_uniforms.size();
+    for (size_t i = 0; i != uniforms_count; ++i)
     {
-        tmp.clear();
-        fmt::format_to(std::back_inserter(tmp), "uColorTable[{}]", i);
-        colors_uniforms[i] = shader->GetUniform(tmp.data());
+        std::string uniform_name = fmt::format("uColorTable[{}]", i);
+        colors_uniforms[i] = shader->GetUniform(uniform_name.data());
     }
 
     const std::array<MeshVertex, 4> vertices{
@@ -323,20 +326,19 @@ void FractalApp::Tick(float delta_time)
         texture->Bind();
         for (auto& region : regions)
         {
-            if (region.has_new_data && region.thread->GetState() == FractalCPURenderingThread::State::Pending)
+            if (region->HasNewData())
             {
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
                 glTexSubImage2D(
                     GL_TEXTURE_2D,
                     0,
-                    static_cast<GLint>(region.thread->GetLocation().x()),
-                    static_cast<GLint>(region.thread->GetLocation().y()),
-                    static_cast<GLsizei>(region.thread->GetSize().x()),
-                    static_cast<GLsizei>(region.thread->GetSize().y()),
+                    static_cast<GLint>(region->GetLocation().x()),
+                    static_cast<GLint>(region->GetLocation().y()),
+                    static_cast<GLsizei>(region->GetSize().x()),
+                    static_cast<GLsizei>(region->GetSize().y()),
                     GL_RGB,
                     GL_UNSIGNED_BYTE,
-                    region.thread->GetPixels().data());
-                region.has_new_data = false;
+                    region->ConsumePixels().data());
             }
         }
 
@@ -436,7 +438,7 @@ void FractalApp::PostTick(float delta_time)
             for (size_t rx = 0; rx != chunk_cols && all_pending; ++rx)
             {
                 auto& region = regions[ry * chunk_cols + rx];
-                if (region.thread->GetState() != FractalCPURenderingThread::State::Pending)
+                if (region->GetState() != FractalCPURenderingThread::State::Pending)
                 {
                     all_pending = false;
                 }
@@ -485,8 +487,7 @@ void FractalApp::PostTick(float delta_time)
                 const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
                 const Eigen::Vector2<size_t> region_location{location_x, location_y};
                 const Eigen::Vector2<size_t> region_size{region_width, region_height};
-                region.thread->SetTask(region_location, region_size);
-                region.has_new_data = true;
+                region->SetTask(region_location, region_size);
                 location_x += region_width;
             }
             location_y += region_height;
@@ -504,9 +505,9 @@ void FractalApp::MakeRegions()
 
     for (auto& region : regions)
     {
-        if (!region.thread)
+        if (!region)
         {
-            region.thread = std::make_unique<FractalCPURenderingThread>(threads_settings_);
+            region = std::make_unique<FractalCPURenderingThread>(threads_settings_);
         }
     }
 }
