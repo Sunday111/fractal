@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/multiprecision/cpp_dec_float.hpp"
 #include "fmt/format.h"
 #include "fractal_settings.hpp"
 #include "klgl/application.hpp"
@@ -57,6 +58,9 @@ void FractalApp::Initialize()
 
 void FractalApp::Tick(float delta_time)
 {
+    boost::multiprecision::cpp_dec_float<100> flt = 0.4f;
+    const double converted = flt.extract_double();
+
     Super::Tick(delta_time);
 
     Window& window = GetWindow();
@@ -86,7 +90,6 @@ void FractalApp::Tick(float delta_time)
         {
             rendering_backend_gpu_ = std::make_unique<FractalRenderingBackendGPU>(*this, settings);
         }
-
         rendering_backend_gpu_->Draw();
     }
 
