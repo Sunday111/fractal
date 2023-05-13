@@ -103,7 +103,7 @@ void Application::Run()
     MainLoop();
 }
 
-void Application::PreTick()
+void Application::PreTick([[maybe_unused]] float dt)
 {
     OpenGl::Viewport(
         0,
@@ -118,9 +118,9 @@ void Application::PreTick()
     ImGui::NewFrame();
 }
 
-void Application::Tick() {}
+void Application::Tick([[maybe_unused]] float dt) {}
 
-void Application::PostTick()
+void Application::PostTick([[maybe_unused]] float dt)
 {
     {
         ScopeAnnotation imgui_render("ImGUI");
@@ -139,13 +139,12 @@ void Application::MainLoop()
     {
         ScopeAnnotation frame_annotation("Frame");
         const auto current_frame_time = std::chrono::high_resolution_clock::now();
-        // const auto frame_delta_time =
-        //      std::chrono::duration<float, std::chrono::seconds::period>(current_frame_time -
-        //      prev_frame_time).count();
+        const auto frame_delta_time =
+            std::chrono::duration<float, std::chrono::seconds::period>(current_frame_time - prev_frame_time).count();
 
-        PreTick();
-        Tick();
-        PostTick();
+        PreTick(frame_delta_time);
+        Tick(frame_delta_time);
+        PostTick(frame_delta_time);
 
         prev_frame_time = current_frame_time;
     }

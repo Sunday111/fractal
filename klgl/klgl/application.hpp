@@ -19,9 +19,9 @@ public:
 
     virtual void Initialize();
     virtual void Run();
-    virtual void PreTick();
-    virtual void Tick();
-    virtual void PostTick();
+    virtual void PreTick(float dt);
+    virtual void Tick(float dt);
+    virtual void PostTick(float dt);
     virtual void MainLoop();
     virtual void InitializeReflectionTypes();
 

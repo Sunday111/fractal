@@ -19,6 +19,10 @@ public:
 
     void Bind() const;
     void SetPixels(std::span<const Eigen::Vector3<uint8_t>> pixel_data);
+    Eigen::Vector2<size_t> GetSize() const
+    {
+        return {width_, height_};
+    }
     size_t GetWidth() const
     {
         return width_;

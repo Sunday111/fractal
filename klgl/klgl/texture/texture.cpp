@@ -19,7 +19,8 @@ std::unique_ptr<Texture> Texture::CreateEmpty(size_t width, size_t height, GLint
 
     assert(tex->type_ == GL_TEXTURE_2D);
     OpenGl::TexImage2d(tex->type_, 0, internal_format, width, height, pixel_data_format, pixel_data_type, nullptr);
-    assert(glGetError() == GL_NO_ERROR);
+    auto err = glGetError();
+    assert(err == GL_NO_ERROR);
 
     OpenGl::SetTexture2dWrap(GlTextureWrap::R, GlTextureWrapMode::Repeat);
     OpenGl::SetTexture2dWrap(GlTextureWrap::S, GlTextureWrapMode::Repeat);
