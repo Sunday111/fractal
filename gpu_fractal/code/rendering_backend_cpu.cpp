@@ -12,7 +12,7 @@
 
 using namespace klgl;
 
-FractalCPURenderingThread::FractalCPURenderingThread(std::shared_ptr<const CommonSettings> common_settings)
+FractalCPURenderingThread::FractalCPURenderingThread(std::shared_ptr<const FractalThreadSettings> common_settings)
 {
     settings = common_settings;
     thread_ = std::thread(&FractalCPURenderingThread::thread_main, this);
@@ -54,23 +54,90 @@ Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(size_t iter
     return (color_a + (color_b - color_a) * p).cast<uint8_t>();
 }
 
+using FractalFunction = size_t (*)(const Float& x, const Float& y, size_t iterations);
+
+template <size_t bits_count>
+FractalFunction WrapFractalFunction()
+{
+    if constexpr (bits_count == 64)
+    {
+        return [](const Float& x, const Float& y, const size_t iterations)
+        {
+            using SF = double;
+            return MandelbrotLoop<SF>(static_cast<SF>(x), static_cast<SF>(y), iterations);
+            // return MandelbrotLoop(x, y, iterations);
+        };
+    }
+    else
+    {
+        return [](const Float& x, const Float& y, const size_t iterations)
+        {
+            using SF = boost::multiprecision::number<boost::multiprecision::cpp_dec_float<bits_count>>;
+            return MandelbrotLoop<SF>(static_cast<SF>(x), static_cast<SF>(y), iterations);
+        };
+    }
+}
+
+static FractalFunction SelectFractalFunction(size_t bits_count)
+{
+    // clang-format off
+    switch (bits_count)
+    {
+        case 65: return WrapFractalFunction<65>();
+        case 66: return WrapFractalFunction<66>();
+        case 67: return WrapFractalFunction<67>();
+        case 68: return WrapFractalFunction<68>();
+        case 69: return WrapFractalFunction<69>();
+        case 60: return WrapFractalFunction<60>();
+        case 71: return WrapFractalFunction<71>();
+        case 72: return WrapFractalFunction<72>();
+        case 73: return WrapFractalFunction<73>();
+        case 74: return WrapFractalFunction<74>();
+        case 75: return WrapFractalFunction<75>();
+        case 76: return WrapFractalFunction<76>();
+        case 77: return WrapFractalFunction<77>();
+        case 78: return WrapFractalFunction<78>();
+        case 79: return WrapFractalFunction<79>();
+        case 80: return WrapFractalFunction<80>();
+        case 81: return WrapFractalFunction<81>();
+        case 82: return WrapFractalFunction<82>();
+        case 83: return WrapFractalFunction<83>();
+        case 84: return WrapFractalFunction<84>();
+        case 85: return WrapFractalFunction<85>();
+        case 86: return WrapFractalFunction<86>();
+        case 87: return WrapFractalFunction<87>();
+        case 88: return WrapFractalFunction<88>();
+        case 89: return WrapFractalFunction<89>();
+        case 90: return WrapFractalFunction<90>();
+        case 91: return WrapFractalFunction<91>();
+        case 92: return WrapFractalFunction<92>();
+        case 93: return WrapFractalFunction<93>();
+        case 94: return WrapFractalFunction<94>();
+        case 95: return WrapFractalFunction<95>();
+        case 96: return WrapFractalFunction<96>();
+        case 97: return WrapFractalFunction<97>();
+        case 98: return WrapFractalFunction<98>();
+        case 99: return WrapFractalFunction<99>();
+        default: return WrapFractalFunction<64>();
+    }
+    // clang-format on
+}
+
 void FractalCPURenderingThread::render()
 {
     pixels.resize(size.x() * size.y());
-
     const auto screenf = Vector2f(settings->screen.cast<Float>());
-
+    const auto ff = SelectFractalFunction(settings->float_bits_count);
+    const Vector2f location_f(location.cast<Float>());
+    const auto step = settings->range / screenf;
     const auto start_point = settings->camera - settings->range / 2;
     for (size_t y = 0; y != size.y(); ++y)
     {
+        Float py = start_point.y() + (y + location.y()) * step.y();
         for (size_t x = 0; x != size.x(); ++x)
         {
-            Vector2f point;
-            point.x() = x;
-            point.y() = y;
-            point += Vector2f(location.cast<Float>());
-            point = start_point + point * settings->range / screenf;
-            const size_t iterations = MandelbrotLoop(point.x(), point.y(), 1000);
+            Float px = start_point.x() + (x + location.x()) * step.x();
+            const size_t iterations = ff(px, py, 1000);
             const auto color = ColorForIteration(iterations);
             pixels[y * size.x() + x] = color;
         }
@@ -116,7 +183,7 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
     RegisterAttribute<&MeshVertex::tex_coord>(1, false);
 
     CreateTexture();
-    threads_settings_ = std::make_unique<FractalCPURenderingThread::CommonSettings>();
+    threads_settings_ = std::make_unique<FractalThreadSettings>();
     regions.resize(chunk_rows * chunk_cols);
 
     for (auto& region : regions)
@@ -197,12 +264,13 @@ void FractalRenderingBackendCPU::PostDraw()
         return min_part;
     };
 
-    const double scale = std::pow(settings_.scale_factor, settings_.scale_i);
+    auto scale = settings_.GetScale();
     auto scaled_coord_range = settings_.global_coord_range * scale;
     threads_settings_->camera = settings_.camera;
     threads_settings_->iterations = 1000;
     threads_settings_->range = scaled_coord_range;
     threads_settings_->screen = texture->GetSize();
+    threads_settings_->float_bits_count = settings_.float_bits_count;
     threads_settings_->colors.clear();
     for (auto& color : settings_.colors)
     {

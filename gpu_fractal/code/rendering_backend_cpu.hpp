@@ -5,9 +5,11 @@
 #include <thread>
 #include <vector>
 
+#include "boost/lockfree/queue.hpp"
 #include "fractal_settings.hpp"
 #include "klgl/shader/uniform_handle.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
+#include "wrap/wrap_boost_asio.hpp"
 
 namespace klgl
 {
@@ -17,18 +19,34 @@ class Shader;
 struct MeshOpenGL;
 }  // namespace klgl
 
+struct FractalThreadSettings
+{
+    Vector2f camera;
+    Vector2f range;
+    std::vector<Eigen::Vector3<uint8_t>> colors;
+    Eigen::Vector2<size_t> screen;
+    size_t iterations;
+    size_t float_bits_count = 64;
+};
+
+class ThreadJob
+{
+public:
+    enum class State
+    {
+        Pending,
+        InProgress,
+        Complete,
+        Cancelled
+    };
+
+    std::atomic<State> state;
+    std::vector<Eigen::Vector3<uint8_t>> data;
+};
+
 class FractalCPURenderingThread
 {
 public:
-    struct CommonSettings
-    {
-        Vector2f camera;
-        Vector2f range;
-        std::vector<Eigen::Vector3<uint8_t>> colors;
-        Eigen::Vector2<size_t> screen;
-        size_t iterations;
-    };
-
     enum class State
     {
         Pending,
@@ -36,7 +54,7 @@ public:
         MustStop
     };
 
-    FractalCPURenderingThread(std::shared_ptr<const CommonSettings> common_settings);
+    FractalCPURenderingThread(std::shared_ptr<const FractalThreadSettings> common_settings);
     ~FractalCPURenderingThread();
 
     State GetState() const
@@ -73,7 +91,7 @@ private:
     Eigen::Vector2<size_t> size;
     std::atomic<State> state_ = State::Pending;
     std::vector<Eigen::Vector3<uint8_t>> pixels;
-    std::shared_ptr<const CommonSettings> settings;
+    std::shared_ptr<const FractalThreadSettings> settings;
     bool has_new_data_ = false;
 };
 
@@ -91,6 +109,9 @@ public:
     void CreateTexture();
 
 private:
+    std::vector<std::unique_ptr<ThreadJob>> jobs_;
+    boost::lockfree::queue<ThreadJob*> job_queue_;
+
     klgl::Application& app_;
     FractalSettings& settings_;
 
@@ -100,5 +121,5 @@ private:
 
     std::vector<std::unique_ptr<FractalCPURenderingThread>> regions;
     std::unique_ptr<klgl::Texture> texture;
-    std::shared_ptr<FractalCPURenderingThread::CommonSettings> threads_settings_;
+    std::shared_ptr<FractalThreadSettings> threads_settings_;
 };

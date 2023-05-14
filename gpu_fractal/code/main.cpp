@@ -42,7 +42,7 @@ public:
     virtual void PostTick(float dt) override;
 
 private:
-    bool render_on_cpu = true;
+    bool render_on_cpu = false;
     FractalSettings settings;
     std::unique_ptr<FractalRenderingBackendCPU> rendering_backend_cpu_;
     std::unique_ptr<FractalRenderingBackendGPU> rendering_backend_gpu_;
@@ -63,15 +63,15 @@ void FractalApp::Tick(float delta_time)
     Super::Tick(delta_time);
 
     Window& window = GetWindow();
-    const double scale = std::pow(settings.scale_factor, static_cast<float>(settings.scale_i));
+    const auto scale = settings.GetScale();
     {
         if (window.IsKeyPressed(GLFW_KEY_E)) settings.IncrementScale();
         if (window.IsKeyPressed(GLFW_KEY_Q)) settings.DecrementScale();
         auto scaled_coord_range = settings.global_coord_range * scale;
-        auto frame_pan = settings.pan_step * delta_time;
+        auto frame_pan = settings.pan_speed * delta_time;
         if (window.IsKeyPressed(GLFW_KEY_W)) settings.ShiftCameraY(scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(Float(1) - scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(Float(1) - scaled_coord_range.x() * frame_pan);
+        if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(-scaled_coord_range.y() * frame_pan);
+        if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(-scaled_coord_range.x() * frame_pan);
         if (window.IsKeyPressed(GLFW_KEY_D)) settings.ShiftCameraX(scaled_coord_range.x() * frame_pan);
     }
 
@@ -157,6 +157,16 @@ void FractalApp::DrawSettings()
         float_input("x", settings.camera.x());
         float_input("y", settings.camera.y());
         settings_changed |= ImGui::InputInt("Zoom", &settings.scale_i);
+    }
+
+    if (render_on_cpu)
+    {
+        int bits_count = static_cast<int>(settings.float_bits_count);
+        if (ImGui::SliderInt("Floating point bits", &bits_count, 64, 640))
+        {
+            settings.float_bits_count = static_cast<size_t>(bits_count);
+            settings_changed = true;
+        }
     }
 
     if (settings_changed)
