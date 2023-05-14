@@ -58,15 +58,18 @@ void FractalCPURenderingThread::render()
 {
     pixels.resize(size.x() * size.y());
 
-    const Eigen::Vector2d screend = settings->screen.cast<double>();
+    const auto screenf = Vector2f(settings->screen.cast<Float>());
 
     const auto start_point = settings->camera - settings->range / 2;
     for (size_t y = 0; y != size.y(); ++y)
     {
         for (size_t x = 0; x != size.x(); ++x)
         {
-            Eigen::Vector2d point = (location + Eigen::Vector2<size_t>{x, y}).cast<double>();
-            point = start_point + point.cwiseProduct(settings->range).cwiseQuotient(screend);
+            Vector2f point;
+            point.x() = x;
+            point.y() = y;
+            point += Vector2f(location.cast<Float>());
+            point = start_point + point * settings->range / screenf;
             const size_t iterations = MandelbrotLoop(point.x(), point.y(), 1000);
             const auto color = ColorForIteration(iterations);
             pixels[y * size.x() + x] = color;

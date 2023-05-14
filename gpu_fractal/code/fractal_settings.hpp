@@ -1,6 +1,7 @@
 #pragma once
 
 #include "klgl/wrap/wrap_eigen.hpp"
+#include "vector.hpp"
 
 struct FractalSettings
 {
@@ -10,8 +11,10 @@ struct FractalSettings
 
     FractalSettings()
     {
-        global_min_coord = {-2.0, -1.12};
-        global_max_coord = {0.47, 1.12};
+        global_min_coord.x() = -2.0;
+        global_min_coord.y() = -1.12;
+        global_max_coord.x() = 0.47;
+        global_max_coord.y() = 1.12;
         global_coord_range = global_max_coord - global_min_coord;
         camera = global_min_coord + global_coord_range / 2;
     }
@@ -31,22 +34,23 @@ struct FractalSettings
         }
     }
 
-    void ShiftCameraX(double delta)
+    void ShiftCameraX(const Float& delta)
     {
         camera.x() += delta;
         settings_applied = false;
     }
-    void ShiftCameraY(double delta)
+
+    void ShiftCameraY(const Float& delta)
     {
         camera.y() += delta;
         settings_applied = false;
     }
 
-    Eigen::Vector2d global_min_coord;
-    Eigen::Vector2d global_max_coord;
-    Eigen::Vector2d global_coord_range;
+    Vector2f global_min_coord;
+    Vector2f global_max_coord;
+    Vector2f global_coord_range;
+    Vector2f camera;
 
-    Eigen::Vector2d camera;
     int scale_i = 0;
     int color_seed = 1234;
     std::array<Eigen::Vector3f, colors_count> colors;

@@ -22,8 +22,8 @@ class FractalCPURenderingThread
 public:
     struct CommonSettings
     {
-        Eigen::Vector2d camera;
-        Eigen::Vector2d range;
+        Vector2f camera;
+        Vector2f range;
         std::vector<Eigen::Vector3<uint8_t>> colors;
         Eigen::Vector2<size_t> screen;
         size_t iterations;

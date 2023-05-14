@@ -44,7 +44,9 @@ FractalRenderingBackendGPU::FractalRenderingBackendGPU(klgl::Application& app, F
 void FractalRenderingBackendGPU::Draw()
 {
     ScopeAnnotation annotation("Render fractal on gpu");
-    const Eigen::Vector2f camera_f = settings_.camera.cast<float>();
+    const Eigen::Vector2f camera_f{
+        static_cast<float>(settings_.camera.x().extract_double()),
+        static_cast<float>(settings_.camera.y().extract_double())};
     const double scale = std::pow(settings_.scale_factor, settings_.scale_i);
     shader_->SetUniform(pos_loc, camera_f);
     shader_->SetUniform(scale_loc, static_cast<float>(scale));

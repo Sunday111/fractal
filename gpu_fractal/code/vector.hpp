@@ -4,7 +4,7 @@
 #include <concepts>
 #include <type_traits>
 
-#include "float.h"
+#include "float.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
 
 template <typename T, size_t N>

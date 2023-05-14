@@ -35,6 +35,7 @@ public:
     using Super = Application;
 
     void DrawSettings();
+    void RandomizeColors();
 
     virtual void Initialize() override;
     virtual void Tick(float dt) override;
@@ -54,6 +55,7 @@ void FractalApp::Initialize()
     const auto content_dir = GetExecutableDir() / "content";
     const auto shaders_dir = content_dir / "shaders";
     Shader::shaders_dir_ = shaders_dir;
+    RandomizeColors();
 }
 
 void FractalApp::Tick(float delta_time)
@@ -68,8 +70,8 @@ void FractalApp::Tick(float delta_time)
         auto scaled_coord_range = settings.global_coord_range * scale;
         auto frame_pan = settings.pan_step * delta_time;
         if (window.IsKeyPressed(GLFW_KEY_W)) settings.ShiftCameraY(scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(-scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(-scaled_coord_range.x() * frame_pan);
+        if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(Float(1) - scaled_coord_range.y() * frame_pan);
+        if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(Float(1) - scaled_coord_range.x() * frame_pan);
         if (window.IsKeyPressed(GLFW_KEY_D)) settings.ShiftCameraX(scaled_coord_range.x() * frame_pan);
     }
 
@@ -136,15 +138,7 @@ void FractalApp::DrawSettings()
         ImGui::SameLine();
         if (ImGui::Button("Randomize"))
         {
-            std::mt19937 rnd(static_cast<unsigned>(settings.color_seed));
-            std::uniform_real_distribution<float> color_distr(0, 1.0f);
-            for (auto& color : settings.colors)
-            {
-                for (float& v : color)
-                {
-                    v = color_distr(rnd);
-                }
-            }
+            RandomizeColors();
             settings_changed = true;
         }
     }
@@ -160,14 +154,27 @@ void FractalApp::DrawSettings()
 
     if (ImGui::CollapsingHeader("Camera"))
     {
-        settings_changed |= ImGui::InputDouble("x", &settings.camera.x(), 0.0, 0.0, "%.12f");
-        settings_changed |= ImGui::InputDouble("y", &settings.camera.y(), 0.0, 0.0, "%.12f");
+        float_input("x", settings.camera.x());
+        float_input("y", settings.camera.y());
         settings_changed |= ImGui::InputInt("Zoom", &settings.scale_i);
     }
 
     if (settings_changed)
     {
         settings.settings_applied = false;
+    }
+}
+
+void FractalApp::RandomizeColors()
+{
+    std::mt19937 rnd(static_cast<unsigned>(settings.color_seed));
+    std::uniform_real_distribution<float> color_distr(0, 1.0f);
+    for (auto& color : settings.colors)
+    {
+        for (float& v : color)
+        {
+            v = color_distr(rnd);
+        }
     }
 }
 
