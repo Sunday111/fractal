@@ -9,7 +9,6 @@
 #include "klgl/window.hpp"
 #include "mesh_vertex.hpp"
 
-
 using namespace klgl;
 
 FractalRenderingBackendGPU::FractalRenderingBackendGPU(klgl::Application& app, FractalSettings& settings)

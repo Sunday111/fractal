@@ -7,7 +7,7 @@
 #include "klgl/shader/shader.hpp"
 #include "klgl/texture/texture.hpp"
 #include "klgl/window.hpp"
-#include "lib_fractal/lib_fractal.hpp"
+#include "mandelbrot.hpp"
 #include "mesh_vertex.hpp"
 
 using namespace klgl;
@@ -67,7 +67,7 @@ void FractalCPURenderingThread::render()
         {
             Eigen::Vector2d point = (location + Eigen::Vector2<size_t>{x, y}).cast<double>();
             point = start_point + point.cwiseProduct(settings->range).cwiseQuotient(screend);
-            const size_t iterations = lib_fractal::MandelbrotLoop(point.x(), point.y(), 1000);
+            const size_t iterations = MandelbrotLoop(point.x(), point.y(), 1000);
             const auto color = ColorForIteration(iterations);
             pixels[y * size.x() + x] = color;
         }

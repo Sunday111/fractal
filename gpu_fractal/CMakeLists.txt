@@ -14,7 +14,7 @@ set(target_name gpu_fractal)
 add_executable(${target_name} ${target_sources} ${target_headers})
 set_generic_compile_options(${target_name} PUBLIC)
 target_include_directories(${target_name} PUBLIC ${CODE_DIR} ${Boost_INCLUDE_DIRS})
-target_link_libraries(${target_name} PUBLIC lib_fractal klgl)
+target_link_libraries(${target_name} PUBLIC klgl)
 
 add_custom_command(TARGET ${target_name}
 	POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory

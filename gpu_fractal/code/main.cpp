@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "boost/multiprecision/cpp_dec_float.hpp"
+#include "float.hpp"
 #include "fmt/format.h"
 #include "fractal_settings.hpp"
 #include "klgl/application.hpp"
@@ -22,7 +23,6 @@
 #include "klgl/window.hpp"
 #include "klgl/wrap/wrap_glfw.hpp"
 #include "klgl/wrap/wrap_imgui.hpp"
-#include "lib_fractal/lib_fractal.hpp"
 #include "mesh_vertex.hpp"
 #include "rendering_backend_cpu.hpp"
 #include "rendering_backend_gpu.hpp"
@@ -58,9 +58,6 @@ void FractalApp::Initialize()
 
 void FractalApp::Tick(float delta_time)
 {
-    boost::multiprecision::cpp_dec_float<100> flt = 0.4f;
-    const double converted = flt.extract_double();
-
     Super::Tick(delta_time);
 
     Window& window = GetWindow();
@@ -151,6 +148,15 @@ void FractalApp::DrawSettings()
             settings_changed = true;
         }
     }
+
+    std::string tmp;
+    auto float_input = [&](const char* title, Float& v)
+    {
+        tmp = v.str(std::numeric_limits<double>::digits10 + 3, std::ios_base::fixed);
+        tmp.resize(1000);
+        settings_changed |= ImGui::InputText(title, tmp.data(), 1000);
+        v = Float(tmp.c_str());
+    };
 
     if (ImGui::CollapsingHeader("Camera"))
     {
