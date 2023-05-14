@@ -19,29 +19,15 @@ class Shader;
 struct MeshOpenGL;
 }  // namespace klgl
 
-struct FractalThreadSettings
+struct ThreadTask
 {
-    Vector2f camera;
-    Vector2f range;
+    Vector2f world_start_point;
+    Vector2f world_step_per_pixel;
+    Eigen::Vector2<size_t> region_screen_location;
+    Eigen::Vector2<size_t> region_screen_size;
     std::vector<Eigen::Vector3<uint8_t>> colors;
-    Eigen::Vector2<size_t> screen;
     size_t iterations;
     size_t float_bits_count = 64;
-};
-
-class ThreadJob
-{
-public:
-    enum class State
-    {
-        Pending,
-        InProgress,
-        Complete,
-        Cancelled
-    };
-
-    std::atomic<State> state;
-    std::vector<Eigen::Vector3<uint8_t>> data;
 };
 
 class FractalCPURenderingThread
@@ -54,7 +40,7 @@ public:
         MustStop
     };
 
-    FractalCPURenderingThread(std::shared_ptr<const FractalThreadSettings> common_settings);
+    FractalCPURenderingThread();
     ~FractalCPURenderingThread();
 
     State GetState() const
@@ -69,19 +55,15 @@ public:
 
     std::span<const Eigen::Vector3<uint8_t>> ConsumePixels();
 
-    void SetTask(
-        const Vector2f& start_point,
-        const Vector2f& step_size,
-        Eigen::Vector2<size_t> region_location,
-        Eigen::Vector2<size_t> region_size);
+    void SetTask(std::unique_ptr<ThreadTask> task);
 
     Eigen::Vector2<size_t> GetSize() const
     {
-        return size;
+        return task->region_screen_size;
     }
     Eigen::Vector2<size_t> GetLocation() const
     {
-        return location;
+        return task->region_screen_location;
     }
 
 private:
@@ -91,13 +73,9 @@ private:
 
 private:
     std::thread thread_;
-    Vector2f start_point;
-    Vector2f step_size;
-    Eigen::Vector2<size_t> location;
-    Eigen::Vector2<size_t> size;
     std::atomic<State> state_ = State::Pending;
     std::vector<Eigen::Vector3<uint8_t>> pixels;
-    std::shared_ptr<const FractalThreadSettings> settings;
+    std::unique_ptr<ThreadTask> task;
     bool has_new_data_ = false;
 };
 
@@ -115,9 +93,6 @@ public:
     void CreateTexture();
 
 private:
-    std::vector<std::unique_ptr<ThreadJob>> jobs_;
-    boost::lockfree::queue<ThreadJob*> job_queue_;
-
     klgl::Application& app_;
     FractalSettings& settings_;
 
@@ -127,5 +102,4 @@ private:
 
     std::vector<std::unique_ptr<FractalCPURenderingThread>> regions;
     std::unique_ptr<klgl::Texture> texture;
-    std::shared_ptr<FractalThreadSettings> threads_settings_;
 };

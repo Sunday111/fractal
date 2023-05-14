@@ -12,9 +12,8 @@
 
 using namespace klgl;
 
-FractalCPURenderingThread::FractalCPURenderingThread(std::shared_ptr<const FractalThreadSettings> common_settings)
+FractalCPURenderingThread::FractalCPURenderingThread()
 {
-    settings = common_settings;
     thread_ = std::thread(&FractalCPURenderingThread::thread_main, this);
 }
 
@@ -31,31 +30,24 @@ std::span<const Eigen::Vector3<uint8_t>> FractalCPURenderingThread::ConsumePixel
     return std::span{pixels};
 }
 
-void FractalCPURenderingThread::SetTask(
-    const Vector2f& in_start_point,
-    const Vector2f& in_step_size,
-    Eigen::Vector2<size_t> region_location,
-    Eigen::Vector2<size_t> region_size)
+void FractalCPURenderingThread::SetTask(std::unique_ptr<ThreadTask> ptr)
 {
     assert(state_ == State::Pending);
     has_new_data_ = true;
-    start_point = in_start_point;
-    step_size = in_step_size;
-    location = region_location;
-    size = region_size;
+    task = std::move(ptr);
     state_ = State::InProgress;
 }
 
 Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(size_t iteration) const
 {
-    if (iteration == settings->iterations) return {0, 0, 0};
+    if (iteration == task->iterations) return {0, 0, 0};
 
-    const size_t segments_count = settings->colors.size() - 1;
-    const size_t iterations_per_segment = settings->iterations / segments_count;
+    const size_t segments_count = task->colors.size() - 1;
+    const size_t iterations_per_segment = task->iterations / segments_count;
     const size_t k = iteration * segments_count;
-    const size_t first_color_index = k / settings->iterations;
-    auto color_a = settings->colors[first_color_index].cast<float>();
-    auto color_b = settings->colors[first_color_index + 1].cast<float>();
+    const size_t first_color_index = k / task->iterations;
+    auto color_a = task->colors[first_color_index].cast<float>();
+    auto color_b = task->colors[first_color_index + 1].cast<float>();
     float p = float(k % iterations_per_segment) / iterations_per_segment;
     return (color_a + (color_b - color_a) * p).cast<uint8_t>();
 }
@@ -131,20 +123,17 @@ static FractalFunction SelectFractalFunction(size_t bits_count)
 
 void FractalCPURenderingThread::render()
 {
-    pixels.resize(size.x() * size.y());
-    const auto screenf = Vector2f(settings->screen.cast<Float>());
-    const auto step = settings->range / screenf;
-    const auto ff = SelectFractalFunction(settings->float_bits_count);
-    // const auto start_point = settings->camera - settings->range / 2;
-    for (size_t y = 0; y != size.y(); ++y)
+    pixels.resize(task->region_screen_size.x() * task->region_screen_size.y());
+    const auto ff = SelectFractalFunction(task->float_bits_count);
+    for (size_t y = 0; y != task->region_screen_size.y(); ++y)
     {
-        Float py = start_point.y() + step.y() * y;
-        for (size_t x = 0; x != size.x(); ++x)
+        Float py = task->world_start_point.y() + task->world_step_per_pixel.y() * y;
+        for (size_t x = 0; x != task->region_screen_size.x(); ++x)
         {
-            Float px = start_point.x() + step.x() * x;
+            Float px = task->world_start_point.x() + task->world_step_per_pixel.x() * x;
             const size_t iterations = ff(px, py, 1000);
             const auto color = ColorForIteration(iterations);
-            pixels[y * size.x() + x] = color;
+            pixels[y * task->region_screen_size.x() + x] = color;
         }
     }
 }
@@ -188,14 +177,13 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
     RegisterAttribute<&MeshVertex::tex_coord>(1, false);
 
     CreateTexture();
-    threads_settings_ = std::make_unique<FractalThreadSettings>();
     regions.resize(chunk_rows * chunk_cols);
 
     for (auto& region : regions)
     {
         if (!region)
         {
-            region = std::make_unique<FractalCPURenderingThread>(threads_settings_);
+            region = std::make_unique<FractalCPURenderingThread>();
         }
     }
 }
@@ -271,19 +259,10 @@ void FractalRenderingBackendCPU::PostDraw()
 
     auto scale = settings_.GetScale();
     auto scaled_coord_range = settings_.global_coord_range * scale;
-    threads_settings_->camera = settings_.camera;
-    threads_settings_->iterations = 1000;
-    threads_settings_->range = scaled_coord_range;
-    threads_settings_->screen = texture->GetSize();
-    threads_settings_->float_bits_count = settings_.float_bits_count;
-    threads_settings_->colors.clear();
-    for (auto& color : settings_.colors)
-    {
-        threads_settings_->colors.push_back((color * 255.f).cast<uint8_t>());
-    }
 
-    const auto screenf = Vector2f(threads_settings_->screen.cast<Float>());
-    const auto step = threads_settings_->range / screenf;
+    const auto screenf = Vector2f(texture->GetSize().cast<Float>());
+    const auto world_step_per_pixel = scaled_coord_range / screenf;
+    const Vector2f world_start_location = settings_.camera - scaled_coord_range / 2;
 
     size_t location_y = 0;
     for (size_t ry = 0; ry != chunk_rows; ++ry)
@@ -294,11 +273,28 @@ void FractalRenderingBackendCPU::PostDraw()
         {
             auto& region = regions[ry * chunk_cols + rx];
             const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
-            const Eigen::Vector2<size_t> region_location{location_x, location_y};
-            const Eigen::Vector2<size_t> region_size{region_width, region_height};
-            const auto start_point = Vector2f(region_location.cast<Float>()) * step + threads_settings_->camera -
-                                     threads_settings_->range / 2;
-            region->SetTask(start_point, step, region_location, region_size);
+            const Eigen::Vector2<size_t> region_screen_location{location_x, location_y};
+            const Eigen::Vector2<size_t> region_screen_size{region_width, region_height};
+            const auto region_world_start_location =
+                world_start_location + Vector2f(region_screen_location.cast<Float>()) * world_step_per_pixel;
+
+            {
+                auto task = std::make_unique<ThreadTask>();
+                task->iterations = 1000;
+                task->float_bits_count = settings_.float_bits_count;
+                task->colors.clear();
+                task->world_start_point = region_world_start_location;
+                task->world_step_per_pixel = world_step_per_pixel;
+                task->region_screen_location = region_screen_location;
+                task->region_screen_size = region_screen_size;
+                for (auto& color : settings_.colors)
+                {
+                    task->colors.push_back((color * 255.f).cast<uint8_t>());
+                }
+
+                region->SetTask(std::move(task));
+            }
+
             location_x += region_width;
         }
         location_y += region_height;
