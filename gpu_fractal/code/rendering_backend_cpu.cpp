@@ -267,9 +267,12 @@ void FractalRenderingBackendCPU::PostDraw()
     auto scale = settings_.GetScale();
     auto scaled_coord_range = settings_.global_coord_range * scale;
 
-    const auto screenf = Vector2f(texture->GetSize().cast<Float>());
+    const auto screeni = texture->GetSize();
+    const auto screenf = Vector2f(screeni.cast<Float>());
     const auto world_step_per_pixel = scaled_coord_range / screenf;
     const Vector2f world_start_location = settings_.camera - scaled_coord_range / 2;
+
+    std::vector<std::unique_ptr<ThreadTask>> temp_tasks_;
 
     size_t location_y = 0;
     for (size_t ry = 0; ry != chunk_rows; ++ry)
@@ -298,13 +301,28 @@ void FractalRenderingBackendCPU::PostDraw()
                     task->colors.push_back((color * 255.f).cast<uint8_t>());
                 }
 
-                tasks_.push_back(std::move(task));
-                task_queue_.push(tasks_.back().get());
+                temp_tasks_.push_back(std::move(task));
             }
 
             location_x += region_width;
         }
         location_y += region_height;
+    }
+
+    // prioritize tasks that closer to the center of texture
+    std::ranges::sort(
+        temp_tasks_,
+        [&](const std::unique_ptr<ThreadTask>& a, const std::unique_ptr<ThreadTask>& b)
+        {
+            Eigen::Vector2i dist_a = a->region_screen_location.cast<int>() - (screeni / 2).cast<int>();
+            Eigen::Vector2i dist_b = b->region_screen_location.cast<int>() - (screeni / 2).cast<int>();
+            return dist_a.squaredNorm() < dist_b.squaredNorm();
+        });
+
+    for (auto& task : temp_tasks_)
+    {
+        tasks_.push_back(std::move(task));
+        task_queue_.push(tasks_.back().get());
     }
 
     settings_.settings_applied = true;
