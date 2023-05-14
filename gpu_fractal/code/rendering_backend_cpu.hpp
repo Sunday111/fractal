@@ -29,61 +29,32 @@ struct ThreadTask
     size_t iterations;
     size_t float_bits_count = 64;
     std::vector<Eigen::Vector3<uint8_t>> pixels;
+    std::atomic_bool completed = false;
+    std::atomic_bool cancelled = false;
 };
 
 class FractalCPURenderingThread
 {
 public:
-    enum class State
-    {
-        Pending,
-        InProgress,
-        MustStop
-    };
-
-    FractalCPURenderingThread();
+    FractalCPURenderingThread(boost::lockfree::queue<ThreadTask*>& task_queue);
     ~FractalCPURenderingThread();
-
-    State GetState() const
-    {
-        return state_;
-    }
-
-    bool HasNewData() const
-    {
-        return has_new_data_ && state_ == State::Pending;
-    }
-
-    std::span<const Eigen::Vector3<uint8_t>> ConsumePixels();
-
-    void SetTask(std::unique_ptr<ThreadTask> task);
-
-    Eigen::Vector2<size_t> GetSize() const
-    {
-        return task->region_screen_size;
-    }
-    Eigen::Vector2<size_t> GetLocation() const
-    {
-        return task->region_screen_location;
-    }
 
 private:
     static Eigen::Vector3<uint8_t> ColorForIteration(ThreadTask& task, size_t iteration);
-    static void render(ThreadTask& task);
+    static void do_task(ThreadTask& task);
     void thread_main();
 
 private:
     std::thread thread_;
-    std::atomic<State> state_ = State::Pending;
-    std::unique_ptr<ThreadTask> task;
-    bool has_new_data_ = false;
+    std::atomic_bool must_stop_ = false;
+    boost::lockfree::queue<ThreadTask*>& task_queue_;
 };
 
 class FractalRenderingBackendCPU
 {
 public:
-    constexpr static size_t chunk_rows = 3;
-    constexpr static size_t chunk_cols = 3;
+    constexpr static size_t chunk_rows = 7;
+    constexpr static size_t chunk_cols = 7;
 
     FractalRenderingBackendCPU(klgl::Application& app, FractalSettings& settings);
     ~FractalRenderingBackendCPU();
@@ -96,10 +67,13 @@ private:
     klgl::Application& app_;
     FractalSettings& settings_;
 
+    std::vector<std::unique_ptr<ThreadTask>> tasks_;
+    boost::lockfree::queue<ThreadTask*> task_queue_;
+
     std::unique_ptr<klgl::Shader> render_texture_shader;
     klgl::UniformHandle texture_loc;
     std::unique_ptr<klgl::MeshOpenGL> quad_mesh;
 
-    std::vector<std::unique_ptr<FractalCPURenderingThread>> regions;
+    std::vector<std::unique_ptr<FractalCPURenderingThread>> workers_;
     std::unique_ptr<klgl::Texture> texture;
 };

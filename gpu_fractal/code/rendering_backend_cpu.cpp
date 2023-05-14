@@ -12,30 +12,16 @@
 
 using namespace klgl;
 
-FractalCPURenderingThread::FractalCPURenderingThread()
+FractalCPURenderingThread::FractalCPURenderingThread(boost::lockfree::queue<ThreadTask*>& task_queue)
+    : task_queue_(task_queue)
 {
     thread_ = std::thread(&FractalCPURenderingThread::thread_main, this);
 }
 
 FractalCPURenderingThread::~FractalCPURenderingThread()
 {
-    state_ = State::MustStop;
+    must_stop_ = true;
     thread_.join();
-}
-
-std::span<const Eigen::Vector3<uint8_t>> FractalCPURenderingThread::ConsumePixels()
-{
-    assert(HasNewData());
-    has_new_data_ = false;
-    return std::span{task->pixels};
-}
-
-void FractalCPURenderingThread::SetTask(std::unique_ptr<ThreadTask> ptr)
-{
-    assert(state_ == State::Pending);
-    has_new_data_ = true;
-    task = std::move(ptr);
-    state_ = State::InProgress;
 }
 
 Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(ThreadTask& task, size_t iteration)
@@ -61,9 +47,7 @@ FractalFunction WrapFractalFunction()
     {
         return [](const Float& x, const Float& y, const size_t iterations)
         {
-            using SF = double;
-            return MandelbrotLoop<SF>(static_cast<SF>(x), static_cast<SF>(y), iterations);
-            // return MandelbrotLoop(x, y, iterations);
+            return MandelbrotLoop<double>(static_cast<double>(x), static_cast<double>(y), iterations);
         };
     }
     else
@@ -121,12 +105,17 @@ static FractalFunction SelectFractalFunction(size_t bits_count)
     // clang-format on
 }
 
-void FractalCPURenderingThread::render(ThreadTask& task)
+void FractalCPURenderingThread::do_task(ThreadTask& task)
 {
     task.pixels.resize(task.region_screen_size.x() * task.region_screen_size.y());
     const auto ff = SelectFractalFunction(task.float_bits_count);
     for (size_t y = 0; y != task.region_screen_size.y(); ++y)
     {
+        if (task.cancelled)
+        {
+            break;
+        }
+
         Float py = task.world_start_point.y() + task.world_step_per_pixel.y() * y;
         for (size_t x = 0; x != task.region_screen_size.x(); ++x)
         {
@@ -136,29 +125,28 @@ void FractalCPURenderingThread::render(ThreadTask& task)
             task.pixels[y * task.region_screen_size.x() + x] = color;
         }
     }
+
+    task.completed = true;
 }
 
 void FractalCPURenderingThread::thread_main()
 {
-    while (state_ != State::MustStop)
+    while (!must_stop_)
     {
-        // Spin lock waiting for a task
-        while (state_ == State::Pending)
+        ThreadTask* task = nullptr;
+        if (!task_queue_.pop(task))
         {
+            continue;
         }
 
-        if (state_ == State::InProgress)
-        {
-            render(*task);
-            auto expected_state = State::InProgress;
-            state_.compare_exchange_strong(expected_state, State::Pending);
-        }
+        do_task(*task);
     }
 }
 
 FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, FractalSettings& settings)
     : app_(app),
-      settings_(settings)
+      settings_(settings),
+      task_queue_(100)
 {
     render_texture_shader = std::make_unique<Shader>("just_texture.shader.json");
     texture_loc = render_texture_shader->GetUniform("uTexture");
@@ -177,13 +165,13 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
     RegisterAttribute<&MeshVertex::tex_coord>(1, false);
 
     CreateTexture();
-    regions.resize(chunk_rows * chunk_cols);
+    workers_.resize(10);
 
-    for (auto& region : regions)
+    for (auto& region : workers_)
     {
         if (!region)
         {
-            region = std::make_unique<FractalCPURenderingThread>();
+            region = std::make_unique<FractalCPURenderingThread>(task_queue_);
         }
     }
 }
@@ -193,23 +181,39 @@ FractalRenderingBackendCPU::~FractalRenderingBackendCPU() = default;
 void FractalRenderingBackendCPU::Draw()
 {
     texture->Bind();
-    for (auto& region : regions)
+
+    for (auto& task : tasks_)
     {
-        if (region->HasNewData())
+        if (task->cancelled)
+        {
+            continue;
+        }
+
+        if (task->completed)
         {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             glTexSubImage2D(
                 GL_TEXTURE_2D,
                 0,
-                static_cast<GLint>(region->GetLocation().x()),
-                static_cast<GLint>(region->GetLocation().y()),
-                static_cast<GLsizei>(region->GetSize().x()),
-                static_cast<GLsizei>(region->GetSize().y()),
+                static_cast<GLint>(task->region_screen_location.x()),
+                static_cast<GLint>(task->region_screen_location.y()),
+                static_cast<GLsizei>(task->region_screen_size.x()),
+                static_cast<GLsizei>(task->region_screen_size.y()),
                 GL_RGB,
                 GL_UNSIGNED_BYTE,
-                region->ConsumePixels().data());
+                task->pixels.data());
         }
     }
+
+    tasks_.erase(
+        std::remove_if(
+            tasks_.begin(),
+            tasks_.end(),
+            [](const auto& task) -> bool
+            {
+                return task->completed;
+            }),
+        tasks_.end());
 
     render_texture_shader->Use();
     render_texture_shader->SetUniform(texture_loc, *texture);
@@ -225,20 +229,22 @@ void FractalRenderingBackendCPU::PostDraw()
         return;
     }
 
-    bool all_pending = true;
-    for (size_t ry = 0; ry != chunk_rows && all_pending; ++ry)
-    {
-        for (size_t rx = 0; rx != chunk_cols && all_pending; ++rx)
+    task_queue_.consume_all(
+        [&](auto&&)
         {
-            auto& region = regions[ry * chunk_cols + rx];
-            if (region->GetState() != FractalCPURenderingThread::State::Pending)
-            {
-                all_pending = false;
-            }
+        });
+
+    bool has_pending_tasks = false;
+    for (auto& task : tasks_)
+    {
+        task->cancelled = true;
+        if (!task->completed)
+        {
+            has_pending_tasks = true;
         }
     }
 
-    if (!all_pending)
+    if (has_pending_tasks)
     {
         return;
     }
@@ -271,7 +277,6 @@ void FractalRenderingBackendCPU::PostDraw()
         const size_t region_height = get_part(texture->GetHeight(), chunk_rows, ry);
         for (size_t rx = 0; rx != chunk_cols; ++rx)
         {
-            auto& region = regions[ry * chunk_cols + rx];
             const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
             const Eigen::Vector2<size_t> region_screen_location{location_x, location_y};
             const Eigen::Vector2<size_t> region_screen_size{region_width, region_height};
@@ -292,7 +297,8 @@ void FractalRenderingBackendCPU::PostDraw()
                     task->colors.push_back((color * 255.f).cast<uint8_t>());
                 }
 
-                region->SetTask(std::move(task));
+                tasks_.push_back(std::move(task));
+                task_queue_.push(tasks_.back().get());
             }
 
             location_x += region_width;
