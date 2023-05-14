@@ -27,7 +27,7 @@ std::span<const Eigen::Vector3<uint8_t>> FractalCPURenderingThread::ConsumePixel
 {
     assert(HasNewData());
     has_new_data_ = false;
-    return std::span{pixels};
+    return std::span{task->pixels};
 }
 
 void FractalCPURenderingThread::SetTask(std::unique_ptr<ThreadTask> ptr)
@@ -38,16 +38,16 @@ void FractalCPURenderingThread::SetTask(std::unique_ptr<ThreadTask> ptr)
     state_ = State::InProgress;
 }
 
-Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(size_t iteration) const
+Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(ThreadTask& task, size_t iteration)
 {
-    if (iteration == task->iterations) return {0, 0, 0};
+    if (iteration == task.iterations) return {0, 0, 0};
 
-    const size_t segments_count = task->colors.size() - 1;
-    const size_t iterations_per_segment = task->iterations / segments_count;
+    const size_t segments_count = task.colors.size() - 1;
+    const size_t iterations_per_segment = task.iterations / segments_count;
     const size_t k = iteration * segments_count;
-    const size_t first_color_index = k / task->iterations;
-    auto color_a = task->colors[first_color_index].cast<float>();
-    auto color_b = task->colors[first_color_index + 1].cast<float>();
+    const size_t first_color_index = k / task.iterations;
+    auto color_a = task.colors[first_color_index].cast<float>();
+    auto color_b = task.colors[first_color_index + 1].cast<float>();
     float p = float(k % iterations_per_segment) / iterations_per_segment;
     return (color_a + (color_b - color_a) * p).cast<uint8_t>();
 }
@@ -121,19 +121,19 @@ static FractalFunction SelectFractalFunction(size_t bits_count)
     // clang-format on
 }
 
-void FractalCPURenderingThread::render()
+void FractalCPURenderingThread::render(ThreadTask& task)
 {
-    pixels.resize(task->region_screen_size.x() * task->region_screen_size.y());
-    const auto ff = SelectFractalFunction(task->float_bits_count);
-    for (size_t y = 0; y != task->region_screen_size.y(); ++y)
+    task.pixels.resize(task.region_screen_size.x() * task.region_screen_size.y());
+    const auto ff = SelectFractalFunction(task.float_bits_count);
+    for (size_t y = 0; y != task.region_screen_size.y(); ++y)
     {
-        Float py = task->world_start_point.y() + task->world_step_per_pixel.y() * y;
-        for (size_t x = 0; x != task->region_screen_size.x(); ++x)
+        Float py = task.world_start_point.y() + task.world_step_per_pixel.y() * y;
+        for (size_t x = 0; x != task.region_screen_size.x(); ++x)
         {
-            Float px = task->world_start_point.x() + task->world_step_per_pixel.x() * x;
+            Float px = task.world_start_point.x() + task.world_step_per_pixel.x() * x;
             const size_t iterations = ff(px, py, 1000);
-            const auto color = ColorForIteration(iterations);
-            pixels[y * task->region_screen_size.x() + x] = color;
+            const auto color = ColorForIteration(task, iterations);
+            task.pixels[y * task.region_screen_size.x() + x] = color;
         }
     }
 }
@@ -149,7 +149,7 @@ void FractalCPURenderingThread::thread_main()
 
         if (state_ == State::InProgress)
         {
-            render();
+            render(*task);
             auto expected_state = State::InProgress;
             state_.compare_exchange_strong(expected_state, State::Pending);
         }

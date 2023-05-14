@@ -28,6 +28,7 @@ struct ThreadTask
     std::vector<Eigen::Vector3<uint8_t>> colors;
     size_t iterations;
     size_t float_bits_count = 64;
+    std::vector<Eigen::Vector3<uint8_t>> pixels;
 };
 
 class FractalCPURenderingThread
@@ -67,14 +68,13 @@ public:
     }
 
 private:
-    Eigen::Vector3<uint8_t> ColorForIteration(size_t iteration) const;
-    void render();
+    static Eigen::Vector3<uint8_t> ColorForIteration(ThreadTask& task, size_t iteration);
+    static void render(ThreadTask& task);
     void thread_main();
 
 private:
     std::thread thread_;
     std::atomic<State> state_ = State::Pending;
-    std::vector<Eigen::Vector3<uint8_t>> pixels;
     std::unique_ptr<ThreadTask> task;
     bool has_new_data_ = false;
 };
