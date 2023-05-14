@@ -230,8 +230,9 @@ void FractalRenderingBackendCPU::PostDraw()
     }
 
     task_queue_.consume_all(
-        [&](auto&&)
+        [&](auto& task)
         {
+            task->completed = true;
         });
 
     bool has_pending_tasks = false;

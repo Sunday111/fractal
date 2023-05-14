@@ -65,10 +65,24 @@ void FractalApp::Tick(float delta_time)
     Window& window = GetWindow();
     const auto scale = settings.GetScale();
     {
+        auto scaled_coord_range = settings.global_coord_range * scale;
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse)
+        {
+            auto imgui_cursor = ImGui::GetMousePos();
+            Vector2f screen_size(Eigen::Vector2<Float>(window.GetSize2f().cast<Float>()));
+            Vector2f click;
+            click.x() = imgui_cursor.x;
+            click.y() = screen_size.y() - imgui_cursor.y;
+            click /= screen_size;
+            click.x() -= 0.5f;
+            click.y() -= 0.5f;
+            settings.camera += scaled_coord_range * click;
+            settings.settings_applied = false;
+        }
+
+        auto frame_pan = settings.pan_speed * delta_time;
         if (window.IsKeyPressed(GLFW_KEY_E)) settings.IncrementScale();
         if (window.IsKeyPressed(GLFW_KEY_Q)) settings.DecrementScale();
-        auto scaled_coord_range = settings.global_coord_range * scale;
-        auto frame_pan = settings.pan_speed * delta_time;
         if (window.IsKeyPressed(GLFW_KEY_W)) settings.ShiftCameraY(scaled_coord_range.y() * frame_pan);
         if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(-scaled_coord_range.y() * frame_pan);
         if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(-scaled_coord_range.x() * frame_pan);

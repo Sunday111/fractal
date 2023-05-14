@@ -53,8 +53,8 @@ private:
 class FractalRenderingBackendCPU
 {
 public:
-    constexpr static size_t chunk_rows = 7;
-    constexpr static size_t chunk_cols = 7;
+    constexpr static size_t chunk_rows = 10;
+    constexpr static size_t chunk_cols = 10;
 
     FractalRenderingBackendCPU(klgl::Application& app, FractalSettings& settings);
     ~FractalRenderingBackendCPU();
