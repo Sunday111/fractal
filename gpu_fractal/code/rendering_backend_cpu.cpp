@@ -107,7 +107,7 @@ static FractalFunction SelectFractalFunction(size_t bits_count)
 
 void FractalCPURenderingThread::do_task(ThreadTask& task)
 {
-    task.pixels.resize(task.region_screen_size.x() * task.region_screen_size.y());
+    task.pixels_iterations.resize(task.region_screen_size.prod());
     const auto ff = SelectFractalFunction(task.float_bits_count);
     for (size_t y = 0; y != task.region_screen_size.y(); ++y)
     {
@@ -120,9 +120,8 @@ void FractalCPURenderingThread::do_task(ThreadTask& task)
         for (size_t x = 0; x != task.region_screen_size.x(); ++x)
         {
             Float px = task.world_start_point.x() + task.world_step_per_pixel.x() * x;
-            const size_t iterations = ff(px, py, 1000);
-            const auto color = ColorForIteration(task, iterations);
-            task.pixels[y * task.region_screen_size.x() + x] = color;
+            const auto iterations = static_cast<uint16_t>(ff(px, py, 1000));
+            task.pixels_iterations[y * task.region_screen_size.x() + x] = iterations;
         }
     }
 
@@ -191,6 +190,13 @@ void FractalRenderingBackendCPU::Draw()
 
         if (task->completed)
         {
+            std::vector<Eigen::Vector3<uint8_t>> pixels;
+            pixels.reserve(task->pixels_iterations.size());
+            for (uint16_t iterations : task->pixels_iterations)
+            {
+                pixels.emplace_back(FractalCPURenderingThread::ColorForIteration(*task, iterations));
+            }
+
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             glTexSubImage2D(
                 GL_TEXTURE_2D,
@@ -201,7 +207,7 @@ void FractalRenderingBackendCPU::Draw()
                 static_cast<GLsizei>(task->region_screen_size.y()),
                 GL_RGB,
                 GL_UNSIGNED_BYTE,
-                task->pixels.data());
+                pixels.data());
         }
     }
 

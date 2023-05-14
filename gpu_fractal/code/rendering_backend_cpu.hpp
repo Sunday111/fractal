@@ -28,7 +28,7 @@ struct ThreadTask
     std::vector<Eigen::Vector3<uint8_t>> colors;
     size_t iterations;
     size_t float_bits_count = 64;
-    std::vector<Eigen::Vector3<uint8_t>> pixels;
+    std::vector<uint16_t> pixels_iterations;
     std::atomic_bool completed = false;
     std::atomic_bool cancelled = false;
 };
@@ -38,9 +38,9 @@ class FractalCPURenderingThread
 public:
     FractalCPURenderingThread(boost::lockfree::queue<ThreadTask*>& task_queue);
     ~FractalCPURenderingThread();
+    static Eigen::Vector3<uint8_t> ColorForIteration(ThreadTask& task, size_t iteration);
 
 private:
-    static Eigen::Vector3<uint8_t> ColorForIteration(ThreadTask& task, size_t iteration);
     static void do_task(ThreadTask& task);
     void thread_main();
 
