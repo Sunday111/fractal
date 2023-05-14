@@ -69,7 +69,11 @@ public:
 
     std::span<const Eigen::Vector3<uint8_t>> ConsumePixels();
 
-    void SetTask(Eigen::Vector2<size_t> region_location, Eigen::Vector2<size_t> region_size);
+    void SetTask(
+        const Vector2f& start_point,
+        const Vector2f& step_size,
+        Eigen::Vector2<size_t> region_location,
+        Eigen::Vector2<size_t> region_size);
 
     Eigen::Vector2<size_t> GetSize() const
     {
@@ -87,6 +91,8 @@ private:
 
 private:
     std::thread thread_;
+    Vector2f start_point;
+    Vector2f step_size;
     Eigen::Vector2<size_t> location;
     Eigen::Vector2<size_t> size;
     std::atomic<State> state_ = State::Pending;

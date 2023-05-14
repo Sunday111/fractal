@@ -31,10 +31,16 @@ std::span<const Eigen::Vector3<uint8_t>> FractalCPURenderingThread::ConsumePixel
     return std::span{pixels};
 }
 
-void FractalCPURenderingThread::SetTask(Eigen::Vector2<size_t> region_location, Eigen::Vector2<size_t> region_size)
+void FractalCPURenderingThread::SetTask(
+    const Vector2f& in_start_point,
+    const Vector2f& in_step_size,
+    Eigen::Vector2<size_t> region_location,
+    Eigen::Vector2<size_t> region_size)
 {
     assert(state_ == State::Pending);
     has_new_data_ = true;
+    start_point = in_start_point;
+    step_size = in_step_size;
     location = region_location;
     size = region_size;
     state_ = State::InProgress;
@@ -127,16 +133,15 @@ void FractalCPURenderingThread::render()
 {
     pixels.resize(size.x() * size.y());
     const auto screenf = Vector2f(settings->screen.cast<Float>());
-    const auto ff = SelectFractalFunction(settings->float_bits_count);
-    const Vector2f location_f(location.cast<Float>());
     const auto step = settings->range / screenf;
-    const auto start_point = settings->camera - settings->range / 2;
+    const auto ff = SelectFractalFunction(settings->float_bits_count);
+    // const auto start_point = settings->camera - settings->range / 2;
     for (size_t y = 0; y != size.y(); ++y)
     {
-        Float py = start_point.y() + (y + location.y()) * step.y();
+        Float py = start_point.y() + step.y() * y;
         for (size_t x = 0; x != size.x(); ++x)
         {
-            Float px = start_point.x() + (x + location.x()) * step.x();
+            Float px = start_point.x() + step.x() * x;
             const size_t iterations = ff(px, py, 1000);
             const auto color = ColorForIteration(iterations);
             pixels[y * size.x() + x] = color;
@@ -277,6 +282,9 @@ void FractalRenderingBackendCPU::PostDraw()
         threads_settings_->colors.push_back((color * 255.f).cast<uint8_t>());
     }
 
+    const auto screenf = Vector2f(threads_settings_->screen.cast<Float>());
+    const auto step = threads_settings_->range / screenf;
+
     size_t location_y = 0;
     for (size_t ry = 0; ry != chunk_rows; ++ry)
     {
@@ -288,7 +296,9 @@ void FractalRenderingBackendCPU::PostDraw()
             const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
             const Eigen::Vector2<size_t> region_location{location_x, location_y};
             const Eigen::Vector2<size_t> region_size{region_width, region_height};
-            region->SetTask(region_location, region_size);
+            const auto start_point = Vector2f(region_location.cast<Float>()) * step + threads_settings_->camera -
+                                     threads_settings_->range / 2;
+            region->SetTask(start_point, step, region_location, region_size);
             location_x += region_width;
         }
         location_y += region_height;
