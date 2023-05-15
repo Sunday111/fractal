@@ -46,6 +46,7 @@ private:
     FractalSettings settings;
     std::unique_ptr<FractalRenderingBackendCPU> rendering_backend_cpu_;
     std::unique_ptr<FractalRenderingBackendGPU> rendering_backend_gpu_;
+    std::vector<float> cpu_frames_durations_;
 };
 
 void FractalApp::Initialize()
@@ -181,6 +182,31 @@ void FractalApp::DrawSettings()
             settings.float_bits_count = static_cast<size_t>(bits_count);
             settings_changed = true;
         }
+
+        if (rendering_backend_cpu_)
+        {
+            auto opt_prev_frame_duration = rendering_backend_cpu_->TakePreviousFrameDuration();
+            if (opt_prev_frame_duration.has_value())
+            {
+                cpu_frames_durations_.push_back(*opt_prev_frame_duration);
+            }
+
+            if (ImGui::BeginListBox("Frame durations"))
+            {
+                for (float frame_duration : cpu_frames_durations_)
+                {
+                    tmp.clear();
+                    fmt::format_to(std::back_inserter(tmp), "{}s", frame_duration);
+                    bool selected = false;
+                    ImGui::Selectable(tmp.c_str(), &selected);
+                }
+                ImGui::EndListBox();
+            }
+        }
+
+        ImGui::ShowDemoWindow();
+
+        // ImGui::ListBox("Frame durations", nullptr, )
     }
 
     if (settings_changed)

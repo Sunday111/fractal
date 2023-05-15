@@ -1,6 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
+#include <optional>
 #include <span>
 #include <thread>
 #include <vector>
@@ -31,6 +33,8 @@ struct ThreadTask
     std::vector<uint16_t> pixels_iterations;
     std::atomic_bool completed = false;
     std::atomic_bool cancelled = false;
+    std::atomic<uint16_t> rows_completed = 0;
+    float task_duration_seconds = 0.0f;
 };
 
 class FractalCPURenderingThread
@@ -63,11 +67,28 @@ public:
     void PostDraw();
     void CreateTexture();
 
+    std::optional<float> TakePreviousFrameDuration()
+    {
+        std::optional<float> r;
+        prev_frame_duration_.swap(r);
+        return r;
+    }
+
+private:
+    void CancelAllTasks();
+    void HandleCompletedTasks();
+    bool HasTasksInProgress() const;
+    void StartNewFractalFrame();
+
 private:
     klgl::Application& app_;
     FractalSettings& settings_;
 
+    std::optional<float> prev_frame_duration_;
+    std::optional<float> current_frame_duration_;
+
     std::vector<std::unique_ptr<ThreadTask>> tasks_;
+    std::vector<std::unique_ptr<ThreadTask>> ready_for_display_;
     boost::lockfree::queue<ThreadTask*> task_queue_;
 
     std::unique_ptr<klgl::Shader> render_texture_shader;

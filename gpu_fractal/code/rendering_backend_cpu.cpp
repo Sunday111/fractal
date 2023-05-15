@@ -107,10 +107,13 @@ static FractalFunction SelectFractalFunction(size_t bits_count)
 
 void FractalCPURenderingThread::do_task(ThreadTask& task)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
     task.pixels_iterations.resize(task.region_screen_size.prod());
     const auto ff = SelectFractalFunction(task.float_bits_count);
     for (size_t y = 0; y != task.region_screen_size.y(); ++y)
     {
+        task.rows_completed = static_cast<uint16_t>(y);
+
         if (task.cancelled)
         {
             break;
@@ -125,6 +128,9 @@ void FractalCPURenderingThread::do_task(ThreadTask& task)
         }
     }
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+    task.task_duration_seconds =
+        std::chrono::duration_cast<std::chrono::duration<float>>(end_time - start_time).count();
     task.completed = true;
 }
 
@@ -133,19 +139,17 @@ void FractalCPURenderingThread::thread_main()
     while (!must_stop_)
     {
         ThreadTask* task = nullptr;
-        if (!task_queue_.pop(task))
+        if (task_queue_.pop(task))
         {
-            continue;
+            do_task(*task);
         }
-
-        do_task(*task);
     }
 }
 
 FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, FractalSettings& settings)
     : app_(app),
       settings_(settings),
-      task_queue_(100)
+      task_queue_(200)
 {
     render_texture_shader = std::make_unique<Shader>("just_texture.shader.json");
     texture_loc = render_texture_shader->GetUniform("uTexture");
@@ -181,45 +185,30 @@ void FractalRenderingBackendCPU::Draw()
 {
     texture->Bind();
 
-    for (auto& task : tasks_)
+    while (!ready_for_display_.empty())
     {
-        if (task->cancelled)
+        auto task = std::move(ready_for_display_.back());
+        ready_for_display_.pop_back();
+
+        std::vector<Eigen::Vector3<uint8_t>> pixels;
+        pixels.reserve(task->pixels_iterations.size());
+        for (uint16_t iterations : task->pixels_iterations)
         {
-            continue;
+            pixels.emplace_back(FractalCPURenderingThread::ColorForIteration(*task, iterations));
         }
 
-        if (task->completed)
-        {
-            std::vector<Eigen::Vector3<uint8_t>> pixels;
-            pixels.reserve(task->pixels_iterations.size());
-            for (uint16_t iterations : task->pixels_iterations)
-            {
-                pixels.emplace_back(FractalCPURenderingThread::ColorForIteration(*task, iterations));
-            }
-
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexSubImage2D(
-                GL_TEXTURE_2D,
-                0,
-                static_cast<GLint>(task->region_screen_location.x()),
-                static_cast<GLint>(task->region_screen_location.y()),
-                static_cast<GLsizei>(task->region_screen_size.x()),
-                static_cast<GLsizei>(task->region_screen_size.y()),
-                GL_RGB,
-                GL_UNSIGNED_BYTE,
-                pixels.data());
-        }
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(
+            GL_TEXTURE_2D,
+            0,
+            static_cast<GLint>(task->region_screen_location.x()),
+            static_cast<GLint>(task->region_screen_location.y()),
+            static_cast<GLsizei>(task->region_screen_size.x()),
+            static_cast<GLsizei>(task->region_screen_size.y()),
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            pixels.data());
     }
-
-    tasks_.erase(
-        std::remove_if(
-            tasks_.begin(),
-            tasks_.end(),
-            [](const auto& task) -> bool
-            {
-                return task->completed;
-            }),
-        tasks_.end());
 
     render_texture_shader->Use();
     render_texture_shader->SetUniform(texture_loc, *texture);
@@ -228,33 +217,64 @@ void FractalRenderingBackendCPU::Draw()
     quad_mesh->Draw();
 }
 
-void FractalRenderingBackendCPU::PostDraw()
+void FractalRenderingBackendCPU::CancelAllTasks()
 {
-    if (settings_.settings_applied)
-    {
-        return;
-    }
-
     task_queue_.consume_all(
         [&](auto& task)
         {
+            task->cancelled = true;
             task->completed = true;
         });
+}
 
-    bool has_pending_tasks = false;
+void FractalRenderingBackendCPU::HandleCompletedTasks()
+{
+    // Consume complete tasks
     for (auto& task : tasks_)
     {
-        task->cancelled = true;
-        if (!task->completed)
+        if (task->completed)
         {
-            has_pending_tasks = true;
+            if (!task->cancelled)
+            {
+                *current_frame_duration_ += task->task_duration_seconds;
+                ready_for_display_.emplace_back(std::move(task));
+            }
+            task = nullptr;
         }
     }
 
-    if (has_pending_tasks)
+    tasks_.erase(
+        std::remove_if(
+            tasks_.begin(),
+            tasks_.end(),
+            [&](auto& task)
+            {
+                return task == nullptr;
+            }),
+        tasks_.end());
+}
+
+bool FractalRenderingBackendCPU::HasTasksInProgress() const
+{
+    if (!task_queue_.empty())
     {
-        return;
+        return true;
     }
+
+    for (auto& task : tasks_)
+    {
+        if (!task->completed)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void FractalRenderingBackendCPU::StartNewFractalFrame()
+{
+    assert(task_queue_.empty());
 
     // Recreate texture to match window size
     CreateTexture();
@@ -327,11 +347,45 @@ void FractalRenderingBackendCPU::PostDraw()
 
     for (auto& task : temp_tasks_)
     {
+        ThreadTask* task_ptr = task.get();
         tasks_.push_back(std::move(task));
-        task_queue_.push(tasks_.back().get());
+        [[maybe_unused]] const bool added = task_queue_.push(task_ptr);
+        assert(added);
+    }
+}
+
+void FractalRenderingBackendCPU::PostDraw()
+{
+    HandleCompletedTasks();
+
+    bool in_progress = HasTasksInProgress();
+
+    if (!in_progress)
+    {
+        if (current_frame_duration_.has_value())
+        {
+            prev_frame_duration_ = current_frame_duration_;
+            current_frame_duration_ = std::nullopt;
+        }
     }
 
-    settings_.settings_applied = true;
+    // Settings has changed
+    if (!settings_.settings_applied)
+    {
+        // But previous were not rendered yet
+        if (in_progress)
+        {
+            // So cancell all current tasks and try again on the next frame
+            CancelAllTasks();
+        }
+        else
+        {
+            // Or start new frames
+            StartNewFractalFrame();
+            settings_.settings_applied = true;
+            current_frame_duration_ = 0.0f;
+        }
+    }
 }
 
 void FractalRenderingBackendCPU::CreateTexture()
