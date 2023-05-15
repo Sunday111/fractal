@@ -11,7 +11,6 @@
 #include "fractal_settings.hpp"
 #include "klgl/shader/uniform_handle.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
-#include "wrap/wrap_boost_asio.hpp"
 
 namespace klgl
 {

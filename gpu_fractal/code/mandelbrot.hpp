@@ -5,25 +5,20 @@
 template <typename T>
 inline size_t MandelbrotLoop(const T& x0, const T& y0, size_t max_iterations)
 {
-    T x{0};
-    T y{0};
+    T x2{0};
+    T y2{0};
+    T w{0};
     size_t iteration = 0;
 
-    const T limit(4);
-    const T two(2);
-
-    while (iteration != max_iterations)
+    while (x2 + y2 <= 4 && iteration != max_iterations)
     {
-        auto xs = x * x;
-        auto ys = y * y;
-        if (xs + ys >= limit)
-        {
-            break;
-        }
+        auto x = x2 - y2 + x0;
+        auto y = w - x2 - y2 + y0;
+        x2 = x * x;
+        y2 = y * y;
+        w = x + y;
+        w *= w;
 
-        T x_temp = xs - ys + x0;
-        y = two * x * y + y0;
-        x = x_temp;
         ++iteration;
     }
 
