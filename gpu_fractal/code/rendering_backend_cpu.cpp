@@ -40,10 +40,9 @@ Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(ThreadTask&
 
 using FractalFunction = size_t (*)(const Float& x, const Float& y, size_t iterations);
 
-template <size_t bits_count>
-FractalFunction WrapFractalFunction()
+static FractalFunction SelectFractalFunction(bool use_double)
 {
-    if constexpr (bits_count == 64)
+    if (use_double)
     {
         return [](const Float& x, const Float& y, const size_t iterations)
         {
@@ -54,62 +53,16 @@ FractalFunction WrapFractalFunction()
     {
         return [](const Float& x, const Float& y, const size_t iterations)
         {
-            using SF = boost::multiprecision::number<boost::multiprecision::cpp_dec_float<bits_count>>;
-            return MandelbrotLoop<SF>(static_cast<SF>(x), static_cast<SF>(y), iterations);
+            return MandelbrotLoop<Float>(x, y, iterations);
         };
     }
-}
-
-static FractalFunction SelectFractalFunction(size_t bits_count)
-{
-    // clang-format off
-    switch (bits_count)
-    {
-        case 65: return WrapFractalFunction<65>();
-        case 66: return WrapFractalFunction<66>();
-        case 67: return WrapFractalFunction<67>();
-        case 68: return WrapFractalFunction<68>();
-        case 69: return WrapFractalFunction<69>();
-        case 60: return WrapFractalFunction<60>();
-        case 71: return WrapFractalFunction<71>();
-        case 72: return WrapFractalFunction<72>();
-        case 73: return WrapFractalFunction<73>();
-        case 74: return WrapFractalFunction<74>();
-        case 75: return WrapFractalFunction<75>();
-        case 76: return WrapFractalFunction<76>();
-        case 77: return WrapFractalFunction<77>();
-        case 78: return WrapFractalFunction<78>();
-        case 79: return WrapFractalFunction<79>();
-        case 80: return WrapFractalFunction<80>();
-        case 81: return WrapFractalFunction<81>();
-        case 82: return WrapFractalFunction<82>();
-        case 83: return WrapFractalFunction<83>();
-        case 84: return WrapFractalFunction<84>();
-        case 85: return WrapFractalFunction<85>();
-        case 86: return WrapFractalFunction<86>();
-        case 87: return WrapFractalFunction<87>();
-        case 88: return WrapFractalFunction<88>();
-        case 89: return WrapFractalFunction<89>();
-        case 90: return WrapFractalFunction<90>();
-        case 91: return WrapFractalFunction<91>();
-        case 92: return WrapFractalFunction<92>();
-        case 93: return WrapFractalFunction<93>();
-        case 94: return WrapFractalFunction<94>();
-        case 95: return WrapFractalFunction<95>();
-        case 96: return WrapFractalFunction<96>();
-        case 97: return WrapFractalFunction<97>();
-        case 98: return WrapFractalFunction<98>();
-        case 99: return WrapFractalFunction<99>();
-        default: return WrapFractalFunction<64>();
-    }
-    // clang-format on
 }
 
 void FractalCPURenderingThread::do_task(ThreadTask& task)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
     task.pixels_iterations.resize(task.region_screen_size.prod());
-    const auto ff = SelectFractalFunction(task.float_bits_count);
+    const auto ff = SelectFractalFunction(task.use_double);
     for (size_t y = 0; y != task.region_screen_size.y(); ++y)
     {
         task.rows_completed = static_cast<uint16_t>(y);
@@ -316,7 +269,7 @@ void FractalRenderingBackendCPU::StartNewFractalFrame()
             {
                 auto task = std::make_unique<ThreadTask>();
                 task->iterations = 1000;
-                task->float_bits_count = settings_.float_bits_count;
+                task->use_double = settings_.use_double;
                 task->colors.clear();
                 task->world_start_point = region_world_start_location;
                 task->world_step_per_pixel = world_step_per_pixel;

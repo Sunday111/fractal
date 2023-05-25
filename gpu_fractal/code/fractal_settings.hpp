@@ -63,5 +63,5 @@ struct FractalSettings
     int color_seed = 1234;
     std::array<Eigen::Vector3f, colors_count> colors;
     bool settings_applied = false;
-    size_t float_bits_count = 64;
+    bool use_double = true;
 };

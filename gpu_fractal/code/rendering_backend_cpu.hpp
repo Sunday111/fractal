@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <concepts>
 #include <optional>
 #include <span>
 #include <thread>
@@ -28,7 +29,7 @@ struct ThreadTask
     Eigen::Vector2<size_t> region_screen_size;
     std::vector<Eigen::Vector3<uint8_t>> colors;
     size_t iterations;
-    size_t float_bits_count = 64;
+    size_t use_double = 64;
     std::vector<uint16_t> pixels_iterations;
     std::atomic_bool completed = false;
     std::atomic_bool cancelled = false;
@@ -71,6 +72,16 @@ public:
         std::optional<float> r;
         prev_frame_duration_.swap(r);
         return r;
+    }
+
+    template <typename Callback>
+        requires std::invocable<Callback, const ThreadTask&>
+    void ForEachTask(Callback&& callback) const
+    {
+        for (auto& task : tasks_)
+        {
+            callback(*task);
+        }
     }
 
 private:

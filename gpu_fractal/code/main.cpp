@@ -176,10 +176,8 @@ void FractalApp::DrawSettings()
 
     if (render_on_cpu)
     {
-        int bits_count = static_cast<int>(settings.float_bits_count);
-        if (ImGui::SliderInt("Floating point bits", &bits_count, 64, 640))
+        if (ImGui::Checkbox("Use regualr double", &settings.use_double))
         {
-            settings.float_bits_count = static_cast<size_t>(bits_count);
             settings_changed = true;
         }
 
@@ -201,6 +199,18 @@ void FractalApp::DrawSettings()
                     ImGui::Selectable(tmp.c_str(), &selected);
                 }
                 ImGui::EndListBox();
+            }
+
+            if (ImGui::CollapsingHeader("Tasks progress"))
+            {
+                rendering_backend_cpu_->ForEachTask(
+                    [](const ThreadTask& task)
+                    {
+                        const size_t completed = task.rows_completed;
+                        const size_t total = task.region_screen_size.y();
+                        const float progress = static_cast<float>(completed) / total;
+                        ImGui::ProgressBar(progress);
+                    });
             }
         }
 
