@@ -208,7 +208,7 @@ void FractalApp::DrawSettings()
                     {
                         const size_t completed = task.rows_completed;
                         const size_t total = task.region_screen_size.y();
-                        const float progress = static_cast<float>(completed) / total;
+                        const float progress = static_cast<float>(completed) / static_cast<float>(total);
                         ImGui::ProgressBar(progress);
                     });
             }

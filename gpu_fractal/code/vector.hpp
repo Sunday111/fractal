@@ -19,7 +19,7 @@ public:
     {
         for (size_t index = 0; index != N; ++index)
         {
-            data[index] = v[index];
+            data[index] = v[static_cast<Eigen::Index>(index)];
         }
     }
 

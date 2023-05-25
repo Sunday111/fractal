@@ -15,7 +15,7 @@ std::unique_ptr<Texture> Texture::CreateEmpty(size_t width, size_t height, GLint
     tex->height_ = height;
     tex->Bind();
     GLenum pixel_data_format = GL_RGB;
-    GLint pixel_data_type = GL_UNSIGNED_BYTE;
+    GLenum pixel_data_type = GL_UNSIGNED_BYTE;
 
     assert(tex->type_ == GL_TEXTURE_2D);
     // auto err = glGetError();
@@ -44,7 +44,7 @@ void Texture::SetPixels(std::span<const Eigen::Vector3<uint8_t>> pixel_data)
     assert(width_ * height_ == pixel_data.size());
     Bind();
     GLint x_offset = 0, y_offset = 0;
-    GLint pixel_data_format = GL_RGB;
+    GLenum pixel_data_format = GL_RGB;
     GLenum pixel_data_type = GL_UNSIGNED_BYTE;
     glTexSubImage2D(
         type_,
@@ -61,7 +61,7 @@ void Texture::SetPixels(std::span<const Eigen::Vector3<uint8_t>> pixel_data)
     std::vector<Eigen::Vector3<uint8_t>> got_pixels;
     got_pixels.resize(pixel_data.size());
     glGetTexImage(GL_TEXTURE_2D, 0, pixel_data_format, pixel_data_type, got_pixels.data());
-    auto err = glGetError();
+    [[maybe_unused]] auto err = glGetError();
     assert(err == GL_NO_ERROR);
 
     std::vector<size_t> different_idnices;

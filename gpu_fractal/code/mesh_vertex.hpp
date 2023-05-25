@@ -6,7 +6,6 @@
 #include "klgl/template/type_to_gl_type.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
 
-
 struct MeshVertex
 {
     Eigen::Vector2f position;
@@ -16,16 +15,16 @@ struct MeshVertex
 template <auto MemberVariablePtr>
 void RegisterAttribute(GLuint location, bool normalized)
 {
-    using MemberTraits = ClassMemberTraits<decltype(MemberVariablePtr)>;
-    using GlTypeTraits = TypeToGlType<typename MemberTraits::Member>;
+    using MemberTraits = klgl::ClassMemberTraits<decltype(MemberVariablePtr)>;
+    using GlTypeTraits = klgl::TypeToGlType<typename MemberTraits::Member>;
     const size_t vertex_stride = sizeof(typename MemberTraits::Class);
-    const size_t member_stride = MemberOffset<MemberVariablePtr>();
-    OpenGl::VertexAttribPointer(
+    const size_t member_stride = klgl::MemberOffset<MemberVariablePtr>();
+    klgl::OpenGl::VertexAttribPointer(
         location,
         GlTypeTraits::Size,
         GlTypeTraits::Type,
         normalized,
         vertex_stride,
         reinterpret_cast<void*>(member_stride));
-    OpenGl::EnableVertexAttribArray(location);
+    klgl::OpenGl::EnableVertexAttribArray(location);
 }

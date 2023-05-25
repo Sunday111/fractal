@@ -34,7 +34,7 @@ Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(ThreadTask&
     const size_t first_color_index = k / task.iterations;
     auto color_a = task.colors[first_color_index].cast<float>();
     auto color_b = task.colors[first_color_index + 1].cast<float>();
-    float p = float(k % iterations_per_segment) / iterations_per_segment;
+    const float p = float(k % iterations_per_segment) / static_cast<float>(iterations_per_segment);
     return (color_a + (color_b - color_a) * p).cast<uint8_t>();
 }
 

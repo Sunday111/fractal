@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstddef>
+
+#include "class_member_traits.hpp"
+
 namespace klgl
 {
 

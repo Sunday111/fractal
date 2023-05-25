@@ -309,8 +309,7 @@ void Shader::SetDefineValue(DefineHandle& handle, edt::GUID type_guid, std::span
     define.SetValue(value);
     need_recompile_ = true;
 
-    [[unlikely]] if (define.type_guid != type_guid)
-        throw std::runtime_error(fmt::format("wrong type"));
+    [[unlikely]] if (define.type_guid != type_guid) throw std::runtime_error(fmt::format("wrong type"));
 }
 
 std::optional<DefineHandle> Shader::FindDefine(Name name) const noexcept
@@ -503,7 +502,7 @@ void Shader::UpdateUniforms()
         num_uniforms = static_cast<GLuint>(num_uniforms_);
     }
 
-    GLint max_name_legth;
+    GLint max_name_legth = 0;
     glGetProgramiv(*program_, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_legth);
 
     std::string name_buffer_heap;
@@ -529,9 +528,9 @@ void Shader::UpdateUniforms()
     uniforms.reserve(num_uniforms);
     for (GLuint i = 0; i != num_uniforms; ++i)
     {
-        GLint variable_size;
-        GLenum glsl_type;
-        GLsizei actual_name_length;
+        GLint variable_size = 0;
+        GLenum glsl_type = 0;
+        GLsizei actual_name_length = 0;
         glGetActiveUniform(
             *program_,
             i,
@@ -589,7 +588,7 @@ void Shader::UpdateUniforms()
         {
             std::string name_with_index(variable_name_view);
             const size_t name_no_index_size = name_with_index.find('[');
-            for (size_t element_index = 0; element_index != variable_size; ++element_index)
+            for (size_t element_index = 0; element_index != static_cast<size_t>(variable_size); ++element_index)
             {
                 name_with_index.resize(name_no_index_size);
                 fmt::format_to(std::back_inserter(name_with_index), "[{}]", element_index);

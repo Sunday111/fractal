@@ -17,3 +17,21 @@ std::filesystem::path GetExecutableDir()
 }  // namespace klgl::os
 
 #endif
+
+#ifdef __unix__
+
+#include <stdio.h>
+#include <unistd.h>
+
+namespace klgl::os
+{
+std::filesystem::path GetExecutableDir()
+{
+    char path[1024];
+    readlink("/proc/self/exe", path, sizeof(path) - 1);
+    const size_t index = std::string_view(path).find_last_of("\\/");
+    path[index] = '\0';
+    return path;
+}
+}  // namespace klgl::os
+#endif
