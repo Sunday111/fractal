@@ -15,8 +15,7 @@ FractalRenderingBackendGPU::FractalRenderingBackendGPU(klgl::Application& app, F
     : app_(app),
       settings_(settings)
 {
-    shader_ = std::make_unique<Shader>("simple.shader.json");
-
+    shader_ = std::make_unique<Shader>("mandelbrot.shader.json");
     pos_loc = shader_->GetUniform("uCameraPos");
     scale_loc = shader_->GetUniform("uScale");
     viewport_size_loc = shader_->GetUniform("uViewportSize");
@@ -44,7 +43,9 @@ FractalRenderingBackendGPU::FractalRenderingBackendGPU(klgl::Application& app, F
 void FractalRenderingBackendGPU::Draw()
 {
     ScopeAnnotation annotation("Render fractal on gpu");
-    const Eigen::Vector2f camera_f{static_cast<float>(settings_.camera.x()), static_cast<float>(settings_.camera.y())};
+    const Eigen::Vector2f camera_f{
+        static_cast<float>(settings_.GetCamera().x()),
+        static_cast<float>(settings_.GetCamera().y())};
     const auto scale = settings_.GetScale();
     shader_->SetUniform(pos_loc, camera_f);
     shader_->SetUniform(scale_loc, static_cast<float>(scale));
@@ -53,6 +54,7 @@ void FractalRenderingBackendGPU::Draw()
     {
         shader_->SetUniform(colors_uniforms[color_index], settings_.colors[color_index]);
     }
+
     shader_->SendUniforms();
     shader_->Use();
     quad_mesh->BindAndDraw();

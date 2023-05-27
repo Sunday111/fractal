@@ -43,8 +43,22 @@ int DoMandelbrotLoop(vec2 p0)
 
 void main()
 {
-    vec2 min_coord = vec2(-2.0, -1.12);
-    vec2 max_coord = vec2(0.47, 1.12);
+    vec2 min_coord = vec2(-2.0, -2.0);
+    vec2 max_coord = vec2(2.0, 2.0);
+
+    if (uViewportSize.x > uViewportSize.y)
+    {
+        // extend x space
+        float width = max_coord.x - min_coord.x;
+        float center_x = min_coord.x + 0.5 * width;
+        float x_scale = (float(uViewportSize.x) / float(uViewportSize.y));
+        max_coord.x += 0.5 * width * (x_scale - 1.0);
+        min_coord.x -= 0.5 * width * (x_scale - 1.0);
+
+    } else {
+
+    }
+
     vec2 range = uScale * (max_coord - min_coord);
     vec2 frag_pos = gl_FragCoord.xy / uViewportSize;
     vec2 coord = uCameraPos + range * (frag_pos - 0.5);

@@ -1,6 +1,6 @@
 {
-    "vertex": "simple.vert",
-    "fragment": "simple.frag",
+    "vertex": "mandelbrot.vert",
+    "fragment": "mandelbrot.frag",
     "glsl_version": "330 core",
     "definitions": [
     ],

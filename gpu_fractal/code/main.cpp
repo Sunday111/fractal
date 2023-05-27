@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <random>
 #include <string_view>
 #include <thread>
@@ -37,9 +38,9 @@ public:
     void DrawSettings();
     void RandomizeColors();
 
-    virtual void Initialize() override;
-    virtual void Tick(float dt) override;
-    virtual void PostTick(float dt) override;
+    void Initialize() override;
+    void Tick(float dt) override;
+    void PostTick(float dt) override;
 
 private:
     bool render_on_cpu = false;
@@ -64,30 +65,22 @@ void FractalApp::Tick(float delta_time)
     Super::Tick(delta_time);
 
     Window& window = GetWindow();
-    const auto scale = settings.GetScale();
+
+    settings.SetViewportSize(window.GetWidth(), window.GetHeight());
+
     {
-        auto scaled_coord_range = settings.global_coord_range * scale;
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().WantCaptureMouse)
         {
             auto imgui_cursor = ImGui::GetMousePos();
-            Vector2f screen_size(Eigen::Vector2<Float>(window.GetSize2f().cast<Float>()));
-            Vector2f click;
-            click.x() = imgui_cursor.x;
-            click.y() = screen_size.y() - imgui_cursor.y;
-            click /= screen_size;
-            click.x() -= 0.5f;
-            click.y() -= 0.5f;
-            settings.camera += scaled_coord_range * click;
-            settings.settings_applied = false;
+            settings.MoveCameraToPixel(static_cast<size_t>(imgui_cursor.x), static_cast<size_t>(imgui_cursor.y), true);
         }
 
-        auto frame_pan = settings.pan_speed * delta_time;
         if (window.IsKeyPressed(GLFW_KEY_E)) settings.IncrementScale();
         if (window.IsKeyPressed(GLFW_KEY_Q)) settings.DecrementScale();
-        if (window.IsKeyPressed(GLFW_KEY_W)) settings.ShiftCameraY(scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_S)) settings.ShiftCameraY(-scaled_coord_range.y() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_A)) settings.ShiftCameraX(-scaled_coord_range.x() * frame_pan);
-        if (window.IsKeyPressed(GLFW_KEY_D)) settings.ShiftCameraX(scaled_coord_range.x() * frame_pan);
+        if (window.IsKeyPressed(GLFW_KEY_W)) settings.PanCamera({.dt = delta_time, .dir_x = 0, .dir_y = 1});
+        if (window.IsKeyPressed(GLFW_KEY_S)) settings.PanCamera({.dt = delta_time, .dir_x = 0, .dir_y = -1});
+        if (window.IsKeyPressed(GLFW_KEY_D)) settings.PanCamera({.dt = delta_time, .dir_x = 1, .dir_y = 0});
+        if (window.IsKeyPressed(GLFW_KEY_A)) settings.PanCamera({.dt = delta_time, .dir_x = -1, .dir_y = 0});
     }
 
     if (render_on_cpu)
@@ -159,19 +152,40 @@ void FractalApp::DrawSettings()
     }
 
     std::string tmp;
-    auto float_input = [&](const char* title, Float& v)
+    auto float_input = [&](const char* title, const Float& v) -> std::optional<Float>
     {
         tmp = v.str(std::numeric_limits<double>::digits10 + 3, std::ios_base::fixed);
         tmp.resize(1000);
-        settings_changed |= ImGui::InputText(title, tmp.data(), 1000);
-        v = Float(tmp.c_str());
+        if (ImGui::InputText(title, tmp.data(), 1000))
+        {
+            return Float(tmp.c_str());
+        }
+
+        return std::nullopt;
     };
 
     if (ImGui::CollapsingHeader("Camera"))
     {
-        float_input("x", settings.camera.x());
-        float_input("y", settings.camera.y());
-        settings_changed |= ImGui::InputInt("Zoom", &settings.scale_i);
+        if (auto maybe_x = float_input("x", settings.GetCamera().x()))
+        {
+            auto new_camera = settings.GetCamera();
+            new_camera.x() = maybe_x.value();
+            settings.SetCamera(new_camera);
+        }
+
+        if (auto maybe_y = float_input("y", settings.GetCamera().y()))
+        {
+            auto new_camera = settings.GetCamera();
+            new_camera.y() = maybe_y.value();
+            settings.SetCamera(new_camera);
+        }
+
+        int zoom = static_cast<int>(settings.GetZoom());
+        if (ImGui::InputInt("Zoom", &zoom))
+        {
+            zoom = std::max(0, zoom);
+            settings.SetZoom(static_cast<uint16_t>(zoom));
+        }
     }
 
     if (render_on_cpu)
@@ -215,8 +229,6 @@ void FractalApp::DrawSettings()
         }
 
         ImGui::ShowDemoWindow();
-
-        // ImGui::ListBox("Frame durations", nullptr, )
     }
 
     if (settings_changed)
@@ -240,6 +252,7 @@ void FractalApp::RandomizeColors()
 
 int main()
 {
+    setenv("GALLIUM_DRIVER", "llvmpipe", 1);
     FractalApp app;
     app.Run();
     return 0;

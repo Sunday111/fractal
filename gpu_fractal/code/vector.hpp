@@ -197,6 +197,14 @@ public:
         return data[2];
     }
 
+    void Fill(const T& arg)
+    {
+        for (auto& v : data)
+        {
+            v = arg;
+        }
+    }
+
     std::array<T, N> data;
 };
 

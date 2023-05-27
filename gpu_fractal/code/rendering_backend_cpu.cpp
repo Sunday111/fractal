@@ -243,14 +243,6 @@ void FractalRenderingBackendCPU::StartNewFractalFrame()
         return min_part;
     };
 
-    auto scale = settings_.GetScale();
-    auto scaled_coord_range = settings_.global_coord_range * scale;
-
-    const auto screeni = texture->GetSize();
-    const auto screenf = Vector2f(screeni.cast<Float>());
-    const auto world_step_per_pixel = scaled_coord_range / screenf;
-    const Vector2f world_start_location = settings_.camera - scaled_coord_range / 2;
-
     std::vector<std::unique_ptr<ThreadTask>> temp_tasks_;
 
     size_t location_y = 0;
@@ -263,16 +255,14 @@ void FractalRenderingBackendCPU::StartNewFractalFrame()
             const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
             const Eigen::Vector2<size_t> region_screen_location{location_x, location_y};
             const Eigen::Vector2<size_t> region_screen_size{region_width, region_height};
-            const auto region_world_start_location =
-                world_start_location + Vector2f(region_screen_location.cast<Float>()) * world_step_per_pixel;
 
             {
                 auto task = std::make_unique<ThreadTask>();
                 task->iterations = 1000;
                 task->use_double = settings_.use_double;
                 task->colors.clear();
-                task->world_start_point = region_world_start_location;
-                task->world_step_per_pixel = world_step_per_pixel;
+                task->world_start_point = settings_.GetCoordAtPixel(location_x, location_y);
+                task->world_step_per_pixel = settings_.GetStepPerPixel();
                 task->region_screen_location = region_screen_location;
                 task->region_screen_size = region_screen_size;
                 for (auto& color : settings_.colors)
@@ -293,6 +283,7 @@ void FractalRenderingBackendCPU::StartNewFractalFrame()
         temp_tasks_,
         [&](const std::unique_ptr<ThreadTask>& a, const std::unique_ptr<ThreadTask>& b)
         {
+            const auto screeni = texture->GetSize();
             Eigen::Vector2i dist_a = a->region_screen_location.cast<int>() - (screeni / 2).cast<int>();
             Eigen::Vector2i dist_b = b->region_screen_location.cast<int>() - (screeni / 2).cast<int>();
             return dist_a.squaredNorm() < dist_b.squaredNorm();
