@@ -10,8 +10,6 @@
 #include "mandelbrot.hpp"
 #include "mesh_vertex.hpp"
 
-using namespace klgl;
-
 FractalCPURenderingThread::FractalCPURenderingThread(boost::lockfree::queue<ThreadTask*>& task_queue)
     : task_queue_(task_queue)
 {
@@ -104,7 +102,7 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
       settings_(settings),
       task_queue_(200)
 {
-    render_texture_shader = std::make_unique<Shader>("just_texture.shader.json");
+    render_texture_shader = std::make_unique<klgl::Shader>("just_texture.shader.json");
     texture_loc = render_texture_shader->GetUniform("uTexture");
 
     const std::array<MeshVertex, 4> vertices{
@@ -115,7 +113,7 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
     const std::array<uint32_t, 6> indices{0, 1, 3, 1, 2, 3};
 
     // Make mesh
-    quad_mesh = MeshOpenGL::MakeFromData<MeshVertex>(std::span{vertices}, std::span{indices});
+    quad_mesh = klgl::MeshOpenGL::MakeFromData<MeshVertex>(std::span{vertices}, std::span{indices});
     quad_mesh->Bind();
     RegisterAttribute<&MeshVertex::position>(0, false);
     RegisterAttribute<&MeshVertex::tex_coord>(1, false);
@@ -341,6 +339,6 @@ void FractalRenderingBackendCPU::CreateTexture()
     size_t window_height = app_.GetWindow().GetHeight();
     if (!texture || texture->GetWidth() != window_width || texture->GetHeight() != window_height)
     {
-        texture = Texture::CreateEmpty(window_width, window_height);
+        texture = klgl::Texture::CreateEmpty(window_width, window_height);
     }
 }

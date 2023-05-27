@@ -30,12 +30,10 @@
 #include "rendering_backend/rendering_backend_cpu.hpp"
 #include "rendering_backend/rendering_backend_gpu.hpp"
 
-using namespace klgl;
-
-class FractalApp : public Application
+class FractalApp : public klgl::Application
 {
 public:
-    using Super = Application;
+    using Super = klgl::Application;
 
     void DrawSettings(const float dt);
     void RandomizeColors();
@@ -59,7 +57,7 @@ void FractalApp::Initialize()
 
     const auto content_dir = GetExecutableDir() / "content";
     const auto shaders_dir = content_dir / "shaders";
-    Shader::shaders_dir_ = shaders_dir;
+    klgl::Shader::shaders_dir_ = shaders_dir;
     RandomizeColors();
 }
 
@@ -68,7 +66,7 @@ void FractalApp::Tick(float delta_time)
     Super::Tick(delta_time);
 
     // Update viewport size
-    Window& window = GetWindow();
+    auto& window = GetWindow();
     settings.SetViewportSize(window.GetWidth(), window.GetHeight());
 
     if (rendering_backend_)
