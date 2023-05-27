@@ -44,7 +44,8 @@ public:
         return static_cast<float>(GetWidth()) / static_cast<float>(GetHeight());
     }
 
-    void SetWindowSize(size_t width, size_t height);
+    void SetSize(size_t width, size_t height);
+    void SetTitle(const char* title);
 
     void SwapBuffers() noexcept;
 

@@ -29,27 +29,19 @@ bool Window::ShouldClose() const noexcept
     return glfwWindowShouldClose(window_);
 }
 
-// void Window::ProcessInput(float dt)
-// {
-//     if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window_, true);
-//     const auto forward = dt * camera_->speed * camera_->front;
-//     const auto right = camera_->speed * dt * camera_->front.cross(camera_->up);
-//     Eigen::Vector2f k{0.0f, 0.0f};
-//     if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) k.x() = 1;
-//     if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) k.x() = -1;
-//     if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) k.y() = -1;
-//     if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) k.y() = 1;
-//     camera_->eye += forward * k.x() + right * k.y();
-// }
-
 void Window::SwapBuffers() noexcept
 {
     glfwSwapBuffers(window_);
 }
 
-void Window::SetWindowSize(size_t width, size_t height)
+void Window::SetSize(size_t width, size_t height)
 {
     glfwSetWindowSize(window_, static_cast<int>(width), static_cast<int>(height));
+}
+
+void Window::SetTitle(const char* title)
+{
+    glfwSetWindowTitle(window_, title);
 }
 
 bool Window::IsKeyPressed(int key) const
@@ -99,7 +91,7 @@ void Window::MouseScrollCallback(GLFWwindow* glfw_window, double x_offset, doubl
 
 void Window::Create()
 {
-    window_ = glfwCreateWindow(static_cast<int>(width_), static_cast<int>(height_), "LearnOpenGL", nullptr, nullptr);
+    window_ = glfwCreateWindow(static_cast<int>(width_), static_cast<int>(height_), "KLGL", nullptr, nullptr);
 
     if (!window_)
     {
