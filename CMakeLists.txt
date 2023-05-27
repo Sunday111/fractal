@@ -6,4 +6,4 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FetchContent)
 
 add_subdirectory(klgl)
-add_subdirectory(gpu_fractal)
+add_subdirectory(fractal)

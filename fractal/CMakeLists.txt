@@ -10,7 +10,7 @@ file(GLOB_RECURSE target_sources ${CODE_DIR}/*.cpp)
 
 set(content_dir ${CMAKE_CURRENT_SOURCE_DIR}/content)
 
-set(target_name gpu_fractal)
+set(target_name fractal)
 add_executable(${target_name} ${target_sources} ${target_headers})
 set_generic_compile_options(${target_name} PUBLIC)
 target_include_directories(${target_name} PUBLIC ${CODE_DIR} ${Boost_INCLUDE_DIRS})
