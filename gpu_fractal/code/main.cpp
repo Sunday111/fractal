@@ -54,6 +54,8 @@ void FractalApp::Initialize()
 {
     Super::Initialize();
 
+    GetWindow().SetWindowSize(1280, 720);
+
     const auto content_dir = GetExecutableDir() / "content";
     const auto shaders_dir = content_dir / "shaders";
     Shader::shaders_dir_ = shaders_dir;

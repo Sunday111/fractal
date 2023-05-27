@@ -47,6 +47,11 @@ void Window::SwapBuffers() noexcept
     glfwSwapBuffers(window_);
 }
 
+void Window::SetWindowSize(size_t width, size_t height)
+{
+    glfwSetWindowSize(window_, static_cast<int>(width), static_cast<int>(height));
+}
+
 bool Window::IsKeyPressed(int key) const
 {
     return glfwGetKey(window_, key) == GLFW_PRESS;

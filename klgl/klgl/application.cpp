@@ -85,7 +85,7 @@ void Application::Initialize()
 
     if (GLFWmonitor* monitor = glfwGetPrimaryMonitor())
     {
-        float xscale, yscale;
+        float xscale = 0, yscale = 0;
         glfwGetMonitorContentScale(monitor, &xscale, &yscale);
 
         ImGui::GetStyle().ScaleAllSizes(2);

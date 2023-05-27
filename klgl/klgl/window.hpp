@@ -44,6 +44,8 @@ public:
         return static_cast<float>(GetWidth()) / static_cast<float>(GetHeight());
     }
 
+    void SetWindowSize(size_t width, size_t height);
+
     void SwapBuffers() noexcept;
 
     bool IsKeyPressed(int key) const;
