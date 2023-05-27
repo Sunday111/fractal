@@ -12,6 +12,7 @@
 #include "fractal_settings.hpp"
 #include "klgl/shader/uniform_handle.hpp"
 #include "klgl/wrap/wrap_eigen.hpp"
+#include "rendering_backend.hpp"
 
 namespace klgl
 {
@@ -54,17 +55,20 @@ private:
     boost::lockfree::queue<ThreadTask*>& task_queue_;
 };
 
-class FractalRenderingBackendCPU
+class FractalRenderingBackendCPU : public FractalRenderingBackend
 {
 public:
-    constexpr static size_t chunk_rows = 10;
-    constexpr static size_t chunk_cols = 10;
+    using Super = FractalRenderingBackend;
+
+    constexpr static size_t kChunkWidth = 10;
+    constexpr static size_t kChunkHeight = 10;
 
     FractalRenderingBackendCPU(klgl::Application& app, FractalSettings& settings);
-    ~FractalRenderingBackendCPU();
+    ~FractalRenderingBackendCPU() override;
 
-    void Draw();
-    void PostDraw();
+    void Draw() override;
+    void DrawSettings() override;
+    void PostDraw() override;
     void CreateTexture();
 
     std::optional<float> TakePreviousFrameDuration()
@@ -75,7 +79,7 @@ public:
     }
 
     template <typename Callback>
-        requires std::invocable<Callback, const ThreadTask&>
+    requires std::invocable<Callback, const ThreadTask&>
     void ForEachTask(Callback&& callback) const
     {
         for (auto& task : tasks_)
@@ -107,4 +111,6 @@ private:
 
     std::vector<std::unique_ptr<FractalCPURenderingThread>> workers_;
     std::unique_ptr<klgl::Texture> texture;
+
+    std::vector<float> cpu_frames_durations_;
 };

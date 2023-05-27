@@ -69,6 +69,11 @@ struct FractalSettings
         }
     }
 
+    uint16_t GetZoom() const
+    {
+        return zoom_;
+    }
+
     const Vector2f& GetCoordRange() const
     {
         return coord_range_;
@@ -101,16 +106,12 @@ struct FractalSettings
 
     struct PanCameraOpts
     {
-        float dt;
-        int dir_x;
-        int dir_y;
+        float dt = 0.0f;
+        int dir_x = 0;
+        int dir_y = 0;
     };
-    void PanCamera(const PanCameraOpts opts);
 
-    uint16_t GetZoom() const
-    {
-        return zoom_;
-    }
+    void PanCamera(const PanCameraOpts opts);
 
     int color_seed = 1234;
     std::array<Eigen::Vector3f, colors_count> colors;

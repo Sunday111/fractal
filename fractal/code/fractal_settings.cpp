@@ -57,22 +57,30 @@ void FractalSettings::MoveCameraToPixel(const size_t x, const size_t y, bool fli
 
 void FractalSettings::PanCamera(const PanCameraOpts opts)
 {
+    if (opts.dir_x == 0 && opts.dir_y == 0)
+    {
+        return;
+    }
+
     Float abs_delta = pan_speed_ * opts.dt;
     std::array<int, 2> dirs{opts.dir_x, opts.dir_y};
 
     for (size_t index = 0; index != 2; ++index)
     {
-        const int dir = dirs[index];
-
-        if (dir > 0)
+        if (const int dir = dirs[index]; dir != 0)
         {
-            camera_[index] += abs_delta * coord_range_[index];
-        }
-        else if (dir < 0)
-        {
-            camera_[index] -= abs_delta * coord_range_[index];
+            if (dir > 0)
+            {
+                camera_[index] += abs_delta * coord_range_[index];
+            }
+            else
+            {
+                camera_[index] -= abs_delta * coord_range_[index];
+            }
         }
     }
+
+    Update();
 }
 
 Vector2f FractalSettings::GetCoordAtPixel(const size_t x, const size_t y) const

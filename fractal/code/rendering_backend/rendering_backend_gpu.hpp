@@ -6,6 +6,7 @@
 
 #include "fractal_settings.hpp"
 #include "klgl/shader/uniform_handle.hpp"
+#include "rendering_backend.hpp"
 
 namespace klgl
 {
@@ -14,12 +15,12 @@ class Shader;
 struct MeshOpenGL;
 }  // namespace klgl
 
-class FractalRenderingBackendGPU
+class FractalRenderingBackendGPU : public FractalRenderingBackend
 {
 public:
     FractalRenderingBackendGPU(klgl::Application& app, FractalSettings& settings);
 
-    void Draw();
+    void Draw() override;
 
 private:
     klgl::Application& app_;

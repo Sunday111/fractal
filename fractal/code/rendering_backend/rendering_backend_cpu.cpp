@@ -34,7 +34,7 @@ Eigen::Vector3<uint8_t> FractalCPURenderingThread::ColorForIteration(ThreadTask&
     const size_t first_color_index = k / task.iterations;
     auto color_a = task.colors[first_color_index].cast<float>();
     auto color_b = task.colors[first_color_index + 1].cast<float>();
-    const float p = float(k % iterations_per_segment) / static_cast<float>(iterations_per_segment);
+    const float p = static_cast<float>(k % iterations_per_segment) / static_cast<float>(iterations_per_segment);
     return (color_a + (color_b - color_a) * p).cast<uint8_t>();
 }
 
@@ -132,7 +132,10 @@ FractalRenderingBackendCPU::FractalRenderingBackendCPU(klgl::Application& app, F
     }
 }
 
-FractalRenderingBackendCPU::~FractalRenderingBackendCPU() = default;
+FractalRenderingBackendCPU::~FractalRenderingBackendCPU()
+{
+    CancelAllTasks();
+}
 
 void FractalRenderingBackendCPU::Draw()
 {
@@ -246,13 +249,13 @@ void FractalRenderingBackendCPU::StartNewFractalFrame()
     std::vector<std::unique_ptr<ThreadTask>> temp_tasks_;
 
     size_t location_y = 0;
-    for (size_t ry = 0; ry != chunk_rows; ++ry)
+    for (size_t ry = 0; ry != kChunkWidth; ++ry)
     {
         size_t location_x = 0;
-        const size_t region_height = get_part(texture->GetHeight(), chunk_rows, ry);
-        for (size_t rx = 0; rx != chunk_cols; ++rx)
+        const size_t region_height = get_part(texture->GetHeight(), kChunkWidth, ry);
+        for (size_t rx = 0; rx != kChunkHeight; ++rx)
         {
-            const size_t region_width = get_part(texture->GetWidth(), chunk_cols, rx);
+            const size_t region_width = get_part(texture->GetWidth(), kChunkHeight, rx);
             const Eigen::Vector2<size_t> region_screen_location{location_x, location_y};
             const Eigen::Vector2<size_t> region_screen_size{region_width, region_height};
 

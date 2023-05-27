@@ -15,6 +15,7 @@ modernize-*\
 -cppcoreguidelines-pro-type-reinterpret-cast,\
 -cppcoreguidelines-avoid-magic-numbers,\
 -cppcoreguidelines-prefer-member-initializer,\
+-cppcoreguidelines-special-member-functions,\
 "
 # Use clang-format
 FormatStyle: file
